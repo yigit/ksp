@@ -75,4 +75,28 @@ interface Resolver {
      * map a declaration to jvm signature.
      */
     fun mapToJvmSignature(declaration: KSDeclaration): String
+
+    /**
+     * Returns the type of [property] when it is viewed as member of [containing].
+     *
+     * For instance, for the following input:
+     * ```
+     * class Base<T>(val x:T) {
+     * }
+     * val foo: Base<Int>
+     * val bar: Base<String>
+     * ```
+     * When `x` is viewed as member of `foo`, this method will return the [KSType] for `kotlin.Int` whereas when `x` is
+     * viewed as member of `bar`, this method will return the KSType representing `kotlin.String`.
+     *
+     * If the given type does not contain [property], the [KSPropertyDeclaration.type type] of the [property] will be
+     * returned.
+     *
+     * @param property The property whose type will be returned
+     * @param containing The type that contains [property]
+     */
+    fun asMemberOf(
+        property: KSPropertyDeclaration,
+        containing: KSType
+    ): KSType
 }

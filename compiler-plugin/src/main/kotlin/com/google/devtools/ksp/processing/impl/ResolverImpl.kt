@@ -18,6 +18,7 @@
 
 package com.google.devtools.ksp.processing.impl
 
+import com.google.devtools.ksp.closestClassDeclaration
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -32,6 +33,7 @@ import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.Variance
+import com.google.devtools.ksp.symbol.impl.asMemberOf
 import com.google.devtools.ksp.symbol.impl.binary.*
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.*
@@ -413,6 +415,19 @@ class ResolverImpl(
     override fun getTypeArgument(typeRef: KSTypeReference, variance: Variance): KSTypeArgument {
         return KSTypeArgumentLiteImpl.getCached(typeRef, variance)
     }
+
+    override fun asMemberOf(
+        property: KSPropertyDeclaration,
+        containing: KSType
+    ) : KSType {
+        val declaration = property.closestClassDeclaration() ?: return property.type.resolve()
+        return property.type.resolve().asMemberOf(
+            resolver = this,
+            declaration = declaration,
+            containing = containing
+        )
+    }
+
 
     override val builtIns: KSBuiltIns by lazy {
         val builtIns = module.builtIns
