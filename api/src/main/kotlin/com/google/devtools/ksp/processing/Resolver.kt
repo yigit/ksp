@@ -99,4 +99,9 @@ interface Resolver {
         property: KSPropertyDeclaration,
         containing: KSType
     ): KSType
+
+    fun asMemberOf(
+        function: KSFunctionDeclaration,
+        containing: KSType
+    ): KSFunctionType
 }
