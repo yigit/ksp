@@ -18,7 +18,6 @@
 
 package com.google.devtools.ksp.processing.impl
 
-import com.google.devtools.ksp.closestClassDeclaration
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -33,7 +32,6 @@ import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.Variance
-import com.google.devtools.ksp.symbol.impl.asMemberOf
 import com.google.devtools.ksp.symbol.impl.binary.*
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.*
@@ -56,7 +54,6 @@ import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.*
-import org.jetbrains.kotlin.resolve.bindingContextUtil.getAbbreviatedTypeOrType
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.constants.ConstantValue
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
@@ -118,7 +115,6 @@ class ResolverImpl(
         lazyJavaResolverContext = LazyJavaResolverContext(javaResolverComponents, TypeParameterResolver.EMPTY) { null }
         javaTypeResolver = lazyJavaResolverContext.typeResolver
         moduleClassResolver = lazyJavaResolverContext.components.moduleClassResolver
-
         instance = this
 
         nameToKSMap = mutableMapOf()
@@ -420,12 +416,14 @@ class ResolverImpl(
         property: KSPropertyDeclaration,
         containing: KSType
     ) : KSType {
-        val declaration = property.closestClassDeclaration() ?: return property.type.resolve()
-        return property.type.resolve().asMemberOf(
-            resolver = this,
-            declaration = declaration,
-            containing = containing
-        )
+        val declaration = resolvePropertyDeclaration(property)
+        return if(declaration != null && containing is KSTypeImpl) {
+            val typeSubstitutor = SubstitutionUtils.buildDeepSubstitutor(containing.kotlinType)
+            val substituted = declaration.substitute(typeSubstitutor)
+            KSTypeImpl.getCached(substituted.type)
+        } else {
+            property.type.resolve()
+        }
     }
 
 
