@@ -54,6 +54,10 @@ import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.*
+import org.jetbrains.kotlin.resolve.calls.inference.components.NewTypeSubstitutor
+import org.jetbrains.kotlin.resolve.calls.inference.components.composeWith
+import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
+import org.jetbrains.kotlin.resolve.calls.inference.substitute
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.constants.ConstantValue
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
@@ -69,6 +73,7 @@ import org.jetbrains.kotlin.types.*
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 import org.jetbrains.kotlin.types.typeUtil.substitute
 import org.jetbrains.kotlin.util.containingNonLocalDeclaration
+import org.jetbrains.kotlin.utils.sure
 
 class ResolverImpl(
     val module: ModuleDescriptor,
@@ -417,13 +422,15 @@ class ResolverImpl(
         containing: KSType
     ) : KSType {
         val declaration = resolvePropertyDeclaration(property)
-        return if(declaration != null && containing is KSTypeImpl) {
-            val typeSubstitutor = SubstitutionUtils.buildDeepSubstitutor(containing.kotlinType)
-            val substituted = declaration.substitute(typeSubstitutor)
-            KSTypeImpl.getCached(substituted.type)
-        } else {
-            property.type.resolve()
+        if(declaration != null && containing is KSTypeImpl) {
+            val typeSubstitutor = containing.kotlinType.createTypeSubstitutor()
+            val substituted = declaration.substitute(typeSubstitutor) as? ValueDescriptor
+            substituted?.let {
+                return KSTypeImpl.getCached(substituted.type)
+            }
         }
+        // if substitution fails, fallback to the type from the property
+        return property.type.resolve()
     }
 
     override fun asMemberOf(
@@ -431,13 +438,13 @@ class ResolverImpl(
         containing: KSType
     ) : KSFunctionType {
         val declaration = resolveFunctionDeclaration(function)
-        return if(declaration != null && containing is KSTypeImpl) {
-            val typeSubstitutor = SubstitutionUtils.buildDeepSubstitutor(containing.kotlinType)
+        if(declaration != null && containing is KSTypeImpl) {
+            val typeSubstitutor = containing.kotlinType.createTypeSubstitutor()
             val substituted = declaration.substitute(typeSubstitutor)
-            KSFunctionTypeImpl(substituted!!)
-        } else {
-            TODO()
+            return KSFunctionTypeImpl(substituted)
         }
+        // if substitution fails, fallback to a type inferred from the function declaration
+        return KSFunctionTypeDeclarationImpl(function)
     }
 
     override val builtIns: KSBuiltIns by lazy {
@@ -508,3 +515,15 @@ fun MemberDescriptor.toKSDeclaration(): KSDeclaration =
             else -> throw IllegalStateException("Unknown expect/actual implementation")
         }
     }
+
+/**
+ * [NewTypeSubstitutor] handles variance better than the old one so we use it when subtituting types
+ * in [ResolverImpl.asMemberOf] implementations.
+ */
+private fun TypeSubstitutor.toNewSubstitutor() = composeWith(
+    org.jetbrains.kotlin.resolve.calls.inference.components.EmptySubstitutor
+)
+
+private fun KotlinType.createTypeSubstitutor(): NewTypeSubstitutor {
+    return SubstitutionUtils.buildDeepSubstitutor(this).toNewSubstitutor()
+}
