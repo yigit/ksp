@@ -23,6 +23,8 @@ import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
+import org.jetbrains.kotlin.builtins.isFunctionType
+import org.jetbrains.kotlin.builtins.isFunctionTypeOrSubtype
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.getAbbreviation
 import org.jetbrains.kotlin.types.isError
@@ -44,6 +46,7 @@ class KSTypeImpl private constructor(
     }
 
     override val declaration: KSDeclaration by lazy {
+        kotlinType.isFunctionTypeOrSubtype
         ResolverImpl.instance.findDeclaration(kotlinType.getAbbreviation() ?: kotlinType)
     }
 

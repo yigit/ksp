@@ -49,12 +49,28 @@
 // functionArgType: <BaseTypeArg1: kotlin.Any?>(Base.functionArgType.BaseTypeArg1?) -> kotlin.String?
 // functionArgTypeWithBounds: <in T: kotlin.String!!>(Base.functionArgTypeWithBounds.T?) -> kotlin.String?
 // extensionFunction: kotlin.String!!.() -> kotlin.String?
+// NotAChild!!
+// intType: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `intType` (Base)
+// baseTypeArg1: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `baseTypeArg1` (Base)
+// baseTypeArg2: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `baseTypeArg2` (Base)
+// typePair: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `typePair` (Base)
+// extensionProperty: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `extensionProperty` (Base)
+// returnInt: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `returnInt` (Base)
+// returnArg1: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `returnArg1` (Base)
+// returnArg1Nullable: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `returnArg1Nullable` (Base)
+// returnArg2: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `returnArg2` (Base)
+// returnArg2Nullable: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `returnArg2Nullable` (Base)
+// receiveArgs: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `receiveArgs` (Base)
+// receiveArgsPair: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `receiveArgsPair` (Base)
+// functionArgType: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `functionArgType` (Base)
+// functionArgTypeWithBounds: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `functionArgTypeWithBounds` (Base)
+// extensionFunction: java.lang.IllegalArgumentException: NotAChild is not a sub type of the class/interface that contains `extensionFunction` (Base)
 // List#get
-// listOfStrings (kotlin.Int!!) -> kotlin.String!!
-// setOfStrings (kotlin.Int!!) -> kotlin.collections.List.E?
+// listOfStrings: (kotlin.Int!!) -> kotlin.String!!
+// setOfStrings: java.lang.IllegalArgumentException: Set<String> is not a sub type of the class/interface that contains `get` (List)
 // Set#contains
-// listOfStrings (kotlin.collections.Set.E?) -> kotlin.Boolean!!
-// setOfStrings (kotlin.String!!) -> kotlin.Boolean!!
+// listOfStrings: java.lang.IllegalArgumentException: List<String> is not a sub type of the class/interface that contains `contains` (Set)
+// setOfStrings: (kotlin.String!!) -> kotlin.Boolean!!
 // JavaChild1!!
 // intType: kotlin.Int!!
 // typeArg1: kotlin.String
@@ -63,6 +79,10 @@
 // receiveArgs: (kotlin.String, kotlin.Int, kotlin.Int!!) -> kotlin.Unit!!
 // methodArgType: <BaseTypeArg1: kotlin.Any>(JavaBase.methodArgType.BaseTypeArg1?, kotlin.Int) -> kotlin.Unit!!
 // methodArgTypeWithBounds: <T: kotlin.String>(JavaBase.methodArgTypeWithBounds.T?) -> kotlin.Unit!!
+// fileLevelFunction: java.lang.IllegalArgumentException: Cannot call asMemberOf with a function that is not declared in a class or an interface
+// fileLevelExtensionFunction: java.lang.IllegalArgumentException: Cannot call asMemberOf with a function that is not declared in a class or an interface
+// fileLevelProperty: java.lang.IllegalArgumentException: Cannot call asMemberOf with a property that is not declared in a class or an interface
+// errorType: error-type
 // END
 // FILE: Input.kt
 open class Base<BaseTypeArg1, BaseTypeArg2> {
@@ -87,16 +107,45 @@ open class Base<BaseTypeArg1, BaseTypeArg2> {
     val BaseTypeArg2.extensionProperty:BaseTypeArg2? = TODO()
 }
 
-open class Child1 : Base<Int, String?>() {
+open class Child1Explicit {
+    val intType: Int = 0
+    val baseTypeArg1: Int = TODO()
+    val baseTypeArg2: String? = TODO()
+    val typePair: Pair<String?, Int>  = TODO()
+    val returnInt: () -> Int = TODO()
+    val returnArg1: () -> Int = TODO()
+    val returnArg1Nullable: () -> Int? = TODO()
+    val returnArg2: () -> String? = TODO()
+    val returnArg2Nullable: () -> String? = TODO()
+    val receiveArgs: (intArg:Int?, arg1: Int, arg2:String?) -> Unit = TODO()
+    val receiveArgsPair: (
+        pairs: Pair<Int, String?>,
+        pairNullable: Pair<Int?, String?>?,
+    ) -> Unit = TODO()
+    // intentional type argument name conflict here to ensure it does not get replaced by mistake
+    fun <BaseTypeArg1> functionArgType(t:BaseTypeArg1?): String? = TODO()
+    fun <in T: Int> functionArgTypeWithBounds(t:T?): String? = TODO()
+    val extensionFunction: Int.(foo:String, bar:String?) -> Int? = TODO()
+    val String.extensionProperty:String? = TODO()
+}
 
+open class Child1 : Base<Int, String?>() {
 }
 
 open class Child2<ChildTypeArg1> : Base<ChildTypeArg1, ChildTypeArg1?>() {
-
 }
+
+class NotAChild
 val child2WithString: Child2<String> = TODO()
 val listOfStrings: List<String> = TODO()
 val setOfStrings: Set<String> = TODO()
+
+fun <T>List<T>.fileLevelExtensionFunction():Unit = TODO()
+fun <T>fileLevelFunction():Unit = TODO()
+val fileLevelProperty:Int = 3
+val errorType: NonExistingType
+val functionProp : (Int) -> String = TODO()
+val functionPropWithReceiver : Child1.(Int) -> String = TODO()
 
 // FILE: JavaInput.java
 class JavaBase<BaseTypeArg1, BaseTypeArg2> {
