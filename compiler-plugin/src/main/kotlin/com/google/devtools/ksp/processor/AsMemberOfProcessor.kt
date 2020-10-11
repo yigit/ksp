@@ -7,12 +7,11 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionType
+import com.google.devtools.ksp.symbol.KSFunction
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Nullability
-import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionTypeFromKsType
 import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
 import org.jetbrains.kotlin.backend.common.descriptors.isFunctionOrKFunctionType
 
@@ -64,32 +63,11 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
         val fileLevelExtensionFunction = resolver.getDeclaration<KSFunctionDeclaration>("fileLevelExtensionFunction")
         results.add("fileLevelExtensionFunction: " + resolver.asMemberOfSignature(fileLevelExtensionFunction, listOfStrings))
 
-        val fileLevelProperty =  resolver.getDeclaration<KSPropertyDeclaration>("fileLevelProperty")
+        val fileLevelProperty = resolver.getDeclaration<KSPropertyDeclaration>("fileLevelProperty")
         results.add("fileLevelProperty: " + resolver.asMemberOfSignature(fileLevelProperty, listOfStrings))
 
         val errorType = resolver.getDeclaration<KSPropertyDeclaration>("errorType").type.resolve()
         results.add("errorType: " + resolver.asMemberOfSignature(listGet, errorType))
-
-        val funProp = resolver.getDeclaration<KSPropertyDeclaration>("functionProp")
-        val type = funProp.type
-        val typeParams = funProp.typeParameters
-        val functionPropWithReceiver = resolver.getDeclaration<KSPropertyDeclaration>("functionPropWithReceiver")
-        val type1 = functionPropWithReceiver.type
-        val expectedChild1 = resolver.getClassDeclarationByName("Child1Explicit")!!
-        results.add(expectedChild1.asStarProjectedType().toSignature())
-        results.addAll(
-            expectedChild1.getDeclaredProperties().map {
-                val resolved = it.type.resolve()
-                val signature = if (resolved is KSTypeImpl && resolved.kotlinType.isFunctionOrKFunctionType) {
-                    val kotlinType = resolved.kotlinType
-                    KSFunctionTypeFromKsType(kotlinType).toSignature()
-                } else {
-                    resolved.toSignature()
-                }
-                it.simpleName.asString() + ":" + signature
-            }
-        )
-        println("hello")
     }
 
     private inline fun <reified T : KSDeclaration> Resolver.getDeclaration(name: String): T {
@@ -186,7 +164,7 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
         return "$varianceSignature$name$boundsSignature"
     }
 
-    private fun KSFunctionType.toSignature(): String {
+    private fun KSFunction.toSignature(): String {
         val returnType = this.returnType?.toSignature() ?: "no-return-type"
         val params = parameterTypes.joinToString(", ") {
             it?.toSignature() ?: "no-type-param"

@@ -82,7 +82,7 @@
 // fileLevelFunction: java.lang.IllegalArgumentException: Cannot call asMemberOf with a function that is not declared in a class or an interface
 // fileLevelExtensionFunction: java.lang.IllegalArgumentException: Cannot call asMemberOf with a function that is not declared in a class or an interface
 // fileLevelProperty: java.lang.IllegalArgumentException: Cannot call asMemberOf with a property that is not declared in a class or an interface
-// errorType: error-type
+// errorType: (<Error>?) -> <Error>?
 // END
 // FILE: Input.kt
 open class Base<BaseTypeArg1, BaseTypeArg2> {
@@ -105,28 +105,6 @@ open class Base<BaseTypeArg1, BaseTypeArg2> {
     fun <in T: BaseTypeArg1> functionArgTypeWithBounds(t:T?): BaseTypeArg2 = TODO()
     fun BaseTypeArg1.extensionFunction():BaseTypeArg1? = TODO()
     val BaseTypeArg2.extensionProperty:BaseTypeArg2? = TODO()
-}
-
-open class Child1Explicit {
-    val intType: Int = 0
-    val baseTypeArg1: Int = TODO()
-    val baseTypeArg2: String? = TODO()
-    val typePair: Pair<String?, Int>  = TODO()
-    val returnInt: () -> Int = TODO()
-    val returnArg1: () -> Int = TODO()
-    val returnArg1Nullable: () -> Int? = TODO()
-    val returnArg2: () -> String? = TODO()
-    val returnArg2Nullable: () -> String? = TODO()
-    val receiveArgs: (intArg:Int?, arg1: Int, arg2:String?) -> Unit = TODO()
-    val receiveArgsPair: (
-        pairs: Pair<Int, String?>,
-        pairNullable: Pair<Int?, String?>?,
-    ) -> Unit = TODO()
-    // intentional type argument name conflict here to ensure it does not get replaced by mistake
-    fun <BaseTypeArg1> functionArgType(t:BaseTypeArg1?): String? = TODO()
-    fun <in T: Int> functionArgTypeWithBounds(t:T?): String? = TODO()
-    val extensionFunction: Int.(foo:String, bar:String?) -> Int? = TODO()
-    val String.extensionProperty:String? = TODO()
 }
 
 open class Child1 : Base<Int, String?>() {

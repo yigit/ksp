@@ -27,7 +27,7 @@ import com.google.devtools.ksp.symbol.KSClassifierReference
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionType
+import com.google.devtools.ksp.symbol.KSFunction
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -48,11 +48,11 @@ import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeReferenceJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSClassDeclarationImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSErrorType
 import com.google.devtools.ksp.symbol.impl.kotlin.KSFileImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionDeclarationImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionTypeDeclarationImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionTypeFromKsType
-import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionTypeImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionErrorImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationParameterImpl
@@ -73,7 +73,6 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.impl.source.PsiClassReferenceType
-import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.codegen.ClassBuilderMode
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.container.ComponentProvider
@@ -89,9 +88,6 @@ import org.jetbrains.kotlin.descriptors.TypeAliasDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueDescriptor
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
-import org.jetbrains.kotlin.descriptors.annotations.Annotations
-import org.jetbrains.kotlin.descriptors.annotations.BuiltInAnnotationDescriptor
-import org.jetbrains.kotlin.descriptors.annotations.CompositeAnnotations
 import org.jetbrains.kotlin.descriptors.resolveClassByFqName
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.components.TypeUsage
@@ -130,13 +126,11 @@ import org.jetbrains.kotlin.resolve.BodyResolver
 import org.jetbrains.kotlin.resolve.LazyTopDownAnalyzer
 import org.jetbrains.kotlin.resolve.calls.inference.components.NewTypeSubstitutor
 import org.jetbrains.kotlin.resolve.calls.inference.components.composeWith
-import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import org.jetbrains.kotlin.resolve.calls.inference.substitute
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.constants.ConstantValue
 import org.jetbrains.kotlin.resolve.constants.evaluate.ConstantExpressionEvaluator
 import org.jetbrains.kotlin.resolve.descriptorUtil.getAllSuperClassifiers
-import org.jetbrains.kotlin.resolve.descriptorUtil.isExtension
 import org.jetbrains.kotlin.resolve.jvm.multiplatform.JavaActualAnnotationArgumentExtractor
 import org.jetbrains.kotlin.resolve.lazy.DeclarationScopeProvider
 import org.jetbrains.kotlin.resolve.lazy.ForceResolveUtil
@@ -145,17 +139,12 @@ import org.jetbrains.kotlin.resolve.multiplatform.findActuals
 import org.jetbrains.kotlin.resolve.multiplatform.findExpects
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope
 import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
-import org.jetbrains.kotlin.types.IndexedParametersSubstitution
 import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlin.types.KotlinTypeFactory
-import org.jetbrains.kotlin.types.KotlinTypeFactory.simpleTypeWithNonTrivialMemberScope
 import org.jetbrains.kotlin.types.SimpleType
 import org.jetbrains.kotlin.types.SubstitutionUtils
 import org.jetbrains.kotlin.types.TypeProjection
-import org.jetbrains.kotlin.types.TypeProjectionImpl
 import org.jetbrains.kotlin.types.TypeSubstitutor
 import org.jetbrains.kotlin.types.replace
-import org.jetbrains.kotlin.types.typeUtil.asTypeProjection
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 import org.jetbrains.kotlin.types.typeUtil.substitute
 import org.jetbrains.kotlin.types.withAbbreviation
@@ -510,12 +499,12 @@ class ResolverImpl(
     override fun asMemberOf(
         property: KSPropertyDeclaration,
         containing: KSType
-    ) : KSType {
+    ): KSType {
         val propertyDeclaredIn = property.closestClassDeclaration()
             ?: throw IllegalArgumentException("Cannot call asMemberOf with a property that is " +
                 "not declared in a class or an interface")
         val declaration = resolvePropertyDeclaration(property)
-        if(declaration != null && containing is KSTypeImpl) {
+        if (declaration != null && containing is KSTypeImpl && !containing.isError) {
             if (!containing.kotlinType.isSubtypeOf(propertyDeclaredIn)) {
                 throw IllegalArgumentException(
                     "$containing is not a sub type of the class/interface that contains `$property` ($propertyDeclaredIn)"
@@ -528,92 +517,30 @@ class ResolverImpl(
             }
         }
         // if substitution fails, fallback to the type from the property
-        return property.type.resolve()
+        return KSErrorType
     }
 
     override fun asMemberOf(
         function: KSFunctionDeclaration,
         containing: KSType
-    ) : KSFunctionType {
+    ): KSFunction {
         val functionDeclaredIn = function.closestClassDeclaration()
             ?: throw IllegalArgumentException("Cannot call asMemberOf with a function that is " +
                 "not declared in a class or an interface")
         val declaration = resolveFunctionDeclaration(function)
-        module.builtIns.getFunction(1).defaultType
-        if(declaration != null && containing is KSTypeImpl) {
-            if(!containing.kotlinType.isSubtypeOf(functionDeclaredIn)) {
+        if (declaration != null && containing is KSTypeImpl && !containing.isError) {
+            if (!containing.kotlinType.isSubtypeOf(functionDeclaredIn)) {
                 throw IllegalArgumentException(
-                    "$containing is not a sub type of the class/interface that contains `$function` ($functionDeclaredIn)"
+                    "$containing is not a sub type of the class/interface that contains " +
+                        "`$function` ($functionDeclaredIn)"
                 )
             }
             val typeSubstitutor = containing.kotlinType.createTypeSubstitutor()
             val substituted = declaration.substitute(typeSubstitutor)
-            val functionArgs = mutableListOf<TypeProjection>()
-            // receiver is the first parameter but only if it exists
-            if (substituted.extensionReceiverParameter != null) {
-                functionArgs.add(
-                    substituted.extensionReceiverParameter!!.type.asTypeProjection()
-                )
-            }
-            // then comes types for value parameters
-            functionArgs.addAll(
-                substituted.valueParameters.map {
-                    it.type.asTypeProjection()
-                }
-            )
-            // finally, the last type argument is the return type
-            functionArgs.add(
-                substituted.returnTypeOrNothing.asTypeProjection()
-            )
-
-
-            val baseDesc = module.builtIns.getFunction(functionArgs.size - 1)
-            val annotations = if (function.extensionReceiver != null) {
-                val extensionFunctionAnntoation = BuiltInAnnotationDescriptor(
-                    builtIns = module.builtIns,
-                    fqName = KotlinBuiltIns.FQ_NAMES.extensionFunctionType,
-                    allValueArguments = emptyMap()
-                )
-                CompositeAnnotations(baseDesc.defaultType.annotations,
-                Annotations.create(listOf(extensionFunctionAnntoation)))
-            } else {
-                baseDesc.defaultType.annotations
-            }
-
-            val customMade = baseDesc.defaultType.replace(
-                newArguments = functionArgs,
-                newAnnotations = annotations
-            )
-//            val foo = KotlinTypeFactory.simpleType(
-//                annotations,
-//                (baseDesc as SimpleType).constructor,
-//                newArguments,
-//                isMarkedNullable
-//            )
-//            println("$containing : $function -> $customMade")
-//            val customMade = KotlinTypeFactory.simpleTypeWithNonTrivialMemberScope(
-//                annotations = substituted.annotations,
-//                constructor = baseDesc.typeConstructor,
-//                arguments = functionArgs,
-//                nullable = false,
-//                memberScope =  baseDesc.unsubstitutedMemberScope
-//            )
-//            val constructed = baseDesc.constructors.firstOrNull()?.let {
-//                it.newCopyBuilder()
-//                .setReturnType(substituted.returnTypeOrNothing)
-//                .setTypeParameters(substituted.typeParameters)
-//                .setValueParameters(substituted.valueParameters)
-//                    .setExtensionReceiverParameter()
-//                .build()
-//            }
-            if (true) {
-                return KSFunctionTypeFromKsType(customMade)
-            }
-
-            return KSFunctionTypeImpl(substituted)
+            return KSFunctionImpl(substituted)
         }
-        // if substitution fails, fallback to types inferred from the function declaration
-        return KSFunctionTypeDeclarationImpl(function)
+        // if substitution fails, return an error function that resembles the original declaration
+        return KSFunctionErrorImpl(function)
     }
 
     private fun KotlinType.isSubtypeOf(declaration: KSClassDeclaration): Boolean {
