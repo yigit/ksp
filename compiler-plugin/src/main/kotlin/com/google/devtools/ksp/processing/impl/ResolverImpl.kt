@@ -18,6 +18,16 @@
 
 package com.google.devtools.ksp.processing.impl
 
+import com.intellij.openapi.project.Project
+import com.intellij.psi.*
+import com.intellij.psi.impl.source.PsiClassReferenceType
+import org.jetbrains.kotlin.codegen.ClassBuilderMode
+import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
+import org.jetbrains.kotlin.container.ComponentProvider
+import org.jetbrains.kotlin.container.get
+import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
+import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import com.google.devtools.ksp.closestClassDeclaration
 import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.Resolver
@@ -29,16 +39,6 @@ import com.google.devtools.ksp.symbol.impl.java.*
 import com.google.devtools.ksp.symbol.impl.kotlin.*
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSTypeReferenceSyntheticImpl
-import com.intellij.openapi.project.Project
-import com.intellij.psi.*
-import com.intellij.psi.impl.source.PsiClassReferenceType
-import org.jetbrains.kotlin.codegen.ClassBuilderMode
-import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
-import org.jetbrains.kotlin.container.ComponentProvider
-import org.jetbrains.kotlin.container.get
-import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
-import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.components.TypeUsage
 import org.jetbrains.kotlin.load.java.lazy.JavaResolverComponents
 import org.jetbrains.kotlin.load.java.lazy.LazyJavaResolverContext
