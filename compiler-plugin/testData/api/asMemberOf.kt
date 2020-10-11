@@ -122,8 +122,6 @@ fun <T>List<T>.fileLevelExtensionFunction():Unit = TODO()
 fun <T>fileLevelFunction():Unit = TODO()
 val fileLevelProperty:Int = 3
 val errorType: NonExistingType
-val functionProp : (Int) -> String = TODO()
-val functionPropWithReceiver : Child1.(Int) -> String = TODO()
 
 // FILE: JavaInput.java
 class JavaBase<BaseTypeArg1, BaseTypeArg2> {
