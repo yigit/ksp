@@ -19,11 +19,9 @@
 package com.google.devtools.ksp.symbol.impl.binary
 
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 
@@ -36,7 +34,19 @@ abstract class KSDeclarationDescriptorImpl(descriptor: DeclarationDescriptor) : 
     override val location: Location = NonExistLocation
 
     override val annotations: List<KSAnnotation> by lazy {
-        descriptor.annotations.map { KSAnnotationDescriptorImpl.getCached(it) }
+        if (descriptor is PropertyDescriptor) {
+            listOfNotNull(
+                descriptor.backingField?.annotations,
+                descriptor.setter?.annotations,
+                descriptor.getter?.annotations
+            ).flatMap {
+                it.map {
+                    KSAnnotationDescriptorImpl.getCached(it)
+                }
+            }
+        } else {
+            descriptor.annotations.map { KSAnnotationDescriptorImpl.getCached(it) }
+        }
     }
 
     override val parentDeclaration: KSDeclaration? by lazy {
@@ -63,5 +73,4 @@ abstract class KSDeclarationDescriptorImpl(descriptor: DeclarationDescriptor) : 
     override fun toString(): String {
         return this.simpleName.asString()
     }
-
 }

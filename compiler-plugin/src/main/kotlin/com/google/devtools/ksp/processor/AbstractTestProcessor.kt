@@ -22,6 +22,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
+import java.io.File
 
 abstract class AbstractTestProcessor : SymbolProcessor {
     override fun init(options: Map<String, String>, kotlinVersion: KotlinVersion, codeGenerator: CodeGenerator, logger: KSPLogger) {
@@ -31,4 +32,6 @@ abstract class AbstractTestProcessor : SymbolProcessor {
     }
 
     abstract fun toResult(): List<String>
+
+    open fun getAdditionalDependencies() : List<File> = emptyList()
 }
