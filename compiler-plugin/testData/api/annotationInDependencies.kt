@@ -181,6 +181,4 @@ pakage main;
 import annotations.*;
 @NoTargetAnnotation
 class JavaClassInMain {
-
 }
-

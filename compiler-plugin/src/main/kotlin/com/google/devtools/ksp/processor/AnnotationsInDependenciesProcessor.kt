@@ -68,7 +68,6 @@ class AnnotationsInDependenciesProcessor : AbstractTestProcessor() {
 
     class AnnotationVisitor : KSTopDownVisitor<MutableMap<KSAnnotated, List<KSAnnotation>>, Unit>() {
         override fun defaultHandler(node: KSNode, data: MutableMap<KSAnnotated, List<KSAnnotation>>) {
-
         }
 
         override fun visitAnnotated(annotated: KSAnnotated, data: MutableMap<KSAnnotated, List<KSAnnotation>>) {
