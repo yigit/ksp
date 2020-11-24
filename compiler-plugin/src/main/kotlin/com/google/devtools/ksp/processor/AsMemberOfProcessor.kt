@@ -2,6 +2,7 @@ package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.getDeclaredFunctions
+import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
@@ -55,6 +56,12 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
         val javaChild1 = resolver.getClassDeclarationByName("JavaChild1")!!
         addToResults(resolver, javaBase, javaChild1.asStarProjectedType())
 
+        val staticField = javaBase.getDeclaredProperties().first {
+            it.simpleName.asString() == "staticField"
+        }
+        val asMemberOf = resolver.asMemberOf(staticField, javaBase.asStarProjectedType())
+        results.add("static field: ${asMemberOf.toSignature()}")
+
         val fileLevelFunction = resolver.getDeclaration<KSFunctionDeclaration>("fileLevelFunction")
         results.add("fileLevelFunction: " + resolver.asMemberOfSignature(fileLevelFunction, listOfStrings))
 
@@ -91,9 +98,6 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
                 }
             }
         }
-
-
-
     }
 
     private inline fun <reified T : KSDeclaration> Resolver.getDeclaration(name: String): T {

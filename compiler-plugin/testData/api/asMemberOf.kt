@@ -130,6 +130,7 @@ class JavaBase<BaseTypeArg1, BaseTypeArg2> {
     int intType;
     BaseTypeArg1 typeArg1;
     BaseTypeArg2 typeArg2;
+    static int staticField;
     BaseTypeArg2 returnArg1() {
         return null;
     }
