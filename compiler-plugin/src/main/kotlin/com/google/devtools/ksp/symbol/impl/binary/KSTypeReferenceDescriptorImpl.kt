@@ -33,7 +33,9 @@ class KSTypeReferenceDescriptorImpl private constructor(val kotlinType: KotlinTy
         fun getCached(kotlinType: KotlinType) = cache.getOrPut(kotlinType) { KSTypeReferenceDescriptorImpl(kotlinType) }
     }
 
-    override val origin = Origin.CLASS
+    override val origin by lazy {
+        element.origin
+    }
 
     override val location: Location = NonExistLocation
 

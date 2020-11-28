@@ -28,7 +28,7 @@ class KSTypeArgumentDescriptorImpl private constructor(val descriptor: TypeProje
         fun getCached(descriptor: TypeProjection) = cache.getOrPut(descriptor) { KSTypeArgumentDescriptorImpl(descriptor) }
     }
 
-    override val origin = Origin.CLASS
+    override val origin = Origin.CLASS // TODO figure this out w/o psi or pass down
 
     override val location: Location = NonExistLocation
 

@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findOrigin
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSValueArgumentLiteImpl
@@ -42,7 +43,9 @@ class KSAnnotationDescriptorImpl private constructor(val descriptor: AnnotationD
         fun getCached(descriptor: AnnotationDescriptor) = cache.getOrPut(descriptor) { KSAnnotationDescriptorImpl(descriptor) }
     }
 
-    override val origin = Origin.CLASS
+    override val origin by lazy {
+        descriptor.findOrigin()
+    }
 
     override val location: Location = NonExistLocation
 

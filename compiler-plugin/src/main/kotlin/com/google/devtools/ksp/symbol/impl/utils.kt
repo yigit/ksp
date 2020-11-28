@@ -34,6 +34,7 @@ import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
 import com.intellij.psi.impl.source.PsiClassImpl
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.JavaVisibilities
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassConstructorDescriptor
@@ -308,5 +309,22 @@ internal fun PsiClass.toKSDescriptorClass() : KSClassDeclarationDescriptorImpl {
     return when(descriptor) {
         is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
         else -> error("cannot resolve $this / $descriptor")
+    }
+}
+
+internal fun AnnotationDescriptor.findOrigin() : Origin {
+    return this.source.getPsi()?.findOrigin() ?: Origin.CLASS
+}
+internal fun DeclarationDescriptor.findOrigin() : Origin {
+    return original.findPsi()?.findOrigin() ?: Origin.CLASS
+}
+
+internal fun PsiElement.findOrigin(): Origin {
+    val fileType = containingFile?.fileType
+    return when(fileType?.defaultExtension) {
+        "java" -> Origin.JAVA
+        "kt" -> Origin.KOTLIN
+        null -> Origin.CLASS
+        else -> error("cannot figure out file type: $fileType $ExceptionMessage") // Origin.CLASS
     }
 }

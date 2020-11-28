@@ -52,7 +52,7 @@ class OverrideeProcessor: AbstractTestProcessor() {
 
     private fun logClass(subject: KSClassDeclaration) {
         subject.declarations.filterIsInstance<KSFunctionDeclaration>()
-            .filterNot { it.simpleName.asString() in IGNORED_METHOD_NAMES }
+            .filterNot { it.simpleName.asString() != "<init>" }
             .forEach {
                 val signature = it.toSignature()
                 val overrideeSignature = it.findOverridee()?.toSignature()
@@ -72,11 +72,6 @@ class OverrideeProcessor: AbstractTestProcessor() {
                 }
             )
         }
-    }
-
-    companion object {
-        // ignore these methods as we receive syntetics of it from compiled code
-        private val IGNORED_METHOD_NAMES = listOf("equals", "hashCode", "toString")
     }
 }
 

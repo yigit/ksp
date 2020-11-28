@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
 import org.jetbrains.kotlin.descriptors.ClassifierDescriptorWithTypeParameters
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findOrigin
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeProjection
 
@@ -43,7 +44,9 @@ class KSClassifierReferenceDescriptorImpl private constructor(val descriptor: Cl
         (descriptor as? ClassifierDescriptorWithTypeParameters)?.declaredTypeParameters?.size ?: 0
     }
 
-    override val origin = Origin.CLASS
+    override val origin by lazy {
+        descriptor.findOrigin()
+    }
 
     override val location: Location = NonExistLocation
 

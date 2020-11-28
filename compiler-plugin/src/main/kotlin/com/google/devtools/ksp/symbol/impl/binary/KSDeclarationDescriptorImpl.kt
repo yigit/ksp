@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.impl.findOrigin
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.KSFileJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
@@ -34,13 +35,7 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 abstract class KSDeclarationDescriptorImpl(descriptor: DeclarationDescriptor) : KSDeclaration {
 
     override val origin: Origin by lazy {
-        val fileType = descriptor.original.findPsi()?.containingFile?.fileType
-        when(fileType?.defaultExtension) {
-            "java" -> Origin.JAVA
-            "kt" -> Origin.KOTLIN
-            null -> Origin.CLASS
-            else -> error("cannot figure out file type: $fileType $ExceptionMessage") // Origin.CLASS
-        }
+        descriptor.findOrigin()
     }
 
     override val containingFile: KSFile? by lazy {

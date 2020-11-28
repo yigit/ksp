@@ -30,7 +30,10 @@
 // test.pack:a
 // test.java.pack:C
 // test.java.pack:Inner
+// test.java.pack:<init>
 // test.java.pack:Nested
+// test.java.pack:<init>
+// test.java.pack:<init>
 // END
 //FILE: a.kt
 package test.pack

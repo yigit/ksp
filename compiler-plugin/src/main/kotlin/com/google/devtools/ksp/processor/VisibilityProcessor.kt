@@ -18,11 +18,11 @@
 
 package com.google.devtools.ksp.processor
 
+import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 class VisibilityProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
@@ -35,9 +35,9 @@ class VisibilityProcessor : AbstractTestProcessor() {
         val symbolA = resolver.getSymbolsWithAnnotation("TestA").single() as KSClassDeclaration
         val symbolB = resolver.getSymbolsWithAnnotation("TestB").single() as KSClassDeclaration
         val symbolD = resolver.getSymbolsWithAnnotation("TestD").single() as KSClassDeclaration
-        val allFunctions = (symbolA.superTypes.single().resolve()!!.declaration as KSClassDeclaration)
-            .getAllFunctions()
-        allFunctions.map {
+        val declaredFunctions = (symbolA.superTypes.single().resolve().declaration as KSClassDeclaration)
+            .getDeclaredFunctions()
+        declaredFunctions.map {
             "${it.simpleName.asString()}: ${it.getVisibility()},visible in A, B, D: " +
                     "${it.isVisibleFrom(symbolA)}, ${it.isVisibleFrom(symbolB)}, ${it.isVisibleFrom(symbolD)}"
         }.map { results.add(it) }

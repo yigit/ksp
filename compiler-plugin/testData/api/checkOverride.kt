@@ -27,15 +27,14 @@
 // KotlinList2.bazz overrides KotlinList.bazz: true
 // KotlinList2.bazz overrides KotlinList.baz: false
 // KotlinList2.baz overrides KotlinList2.baz: false
-// JavaImpl.getY overrides JavaImpl.getX: false
-// JavaImpl.getY overrides MyInterface.x: false
-// JavaImpl.getX overrides MyInterface.x: true
-// JavaImpl.setY overrides MyInterface.y: true
-// JavaImpl.setX overrides MyInterface.x: false
-// JavaImpl.getY overrides JavaImpl.getY: false
-// MyInterface.x overrides JavaImpl.getY: false
-// MyInterface.x overrides JavaImpl.getX: false
-// MyInterface.y overrides JavaImpl.setY: false
+// JavaImpl.x overrides MyInterface.x: true
+// MyInterface.x overrides JavaImpl.x: false
+// JavaImpl.x overrides MyInterface.y: false
+// MyInterface.y overrides JavaImpl.x: false
+// JavaImpl.y overrides MyInterface.x: false
+// MyInterface.x overrides JavaImpl.y: false
+// JavaImpl.y overrides MyInterface.y: true
+// MyInterface.y overrides JavaImpl.y: false
 // MyInterface.y overrides MyInterface.y: false
 // JavaDifferentReturnType.foo overrides JavaList.foo: true
 // END

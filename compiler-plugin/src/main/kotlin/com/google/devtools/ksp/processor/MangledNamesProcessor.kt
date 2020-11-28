@@ -56,7 +56,7 @@ class MangledNamesProcessor : AbstractTestProcessor() {
         }
 
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: MutableMap<String, String>) {
-            if (function.simpleName.asString() in IGNORED_FUNCTIONS) return
+            if (function.simpleName.asString() == "<init>") return
             super.visitFunctionDeclaration(function, data)
             data[function.simpleName.asString()] = resolver.getJvmName(function)
         }
@@ -69,11 +69,6 @@ class MangledNamesProcessor : AbstractTestProcessor() {
         override fun visitPropertySetter(setter: KSPropertySetter, data: MutableMap<String, String>) {
             super.visitPropertySetter(setter, data)
             data["set-${setter.receiver.simpleName.asString()}"] = resolver.getJvmName(setter)
-        }
-
-        companion object {
-            // do not report these functions as they are generated only in byte code and do not affect the test.
-            val IGNORED_FUNCTIONS = listOf("equals", "hashCode", "toString")
         }
     }
 }

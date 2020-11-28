@@ -19,7 +19,6 @@
 // TEST PROCESSOR: AllFunctionsProcessor
 // EXPECTED:
 // class: Foo
-// <init>(): C
 // a
 // aFromC
 // aFromC

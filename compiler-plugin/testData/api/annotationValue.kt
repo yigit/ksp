@@ -31,7 +31,7 @@
 // 42
 // Foo
 // File
-// <ERROR TYPE>
+// null
 // @Foo
 // @Suppress
 // G
@@ -74,7 +74,7 @@ class C {
     argInt = 40 + 2,
     argClsUser = Foo.class,
     argClsLib = java.io.File.class,
-    argClsLocal = Local.class, // intentional error type
+    argClsLocal = NonExisting.class, // intentional error type
     argAnnoUser = @Foo(s = 17),
     argAnnoLib = @Suppress(names = {"name1", "name2"}),
     argEnum = RGB.G)

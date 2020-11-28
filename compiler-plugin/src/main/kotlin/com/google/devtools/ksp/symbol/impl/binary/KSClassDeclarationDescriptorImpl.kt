@@ -54,13 +54,13 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
 
     override fun getAllFunctions(): List<KSFunctionDeclaration> {
         return descriptor.unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS).toList()
-            .filterVisibleMembers()
+            .filter { (it as FunctionDescriptor).visibility != Visibilities.INVISIBLE_FAKE }
             .map { KSFunctionDeclarationDescriptorImpl.getCached(it as FunctionDescriptor) }
     }
 
     override fun getAllProperties(): List<KSPropertyDeclaration> {
         return descriptor.unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.VARIABLES).toList()
-                .filterVisibleMembers()
+                .filter { (it as PropertyDescriptor).visibility != Visibilities.INVISIBLE_FAKE }
                 .map { KSPropertyDeclarationDescriptorImpl.getCached(it as PropertyDescriptor) }
     }
 
@@ -86,7 +86,11 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
             descriptor.staticScope.getDescriptorsFiltered(),
             descriptor.constructors
         ).flatten()
-            .filterVisibleMembers()
+            .filter {
+                it is MemberDescriptor
+                        && it.visibility != Visibilities.INHERITED
+                        && it.isNotFake()
+            }
             .map {
                 when (it) {
                     is PropertyDescriptor -> KSPropertyDeclarationDescriptorImpl.getCached(it)
@@ -124,11 +128,5 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
     }
 }
 
-// kotlin generates a bunch that we don't want, filter them out
-private fun Collection<DeclarationDescriptor>.filterVisibleMembers() =
-    filter {
-        it is MemberDescriptor
-            && it.visibility != Visibilities.INHERITED
-            && it.visibility != Visibilities.INVISIBLE_FAKE
-            && (it !is CallableMemberDescriptor || it.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
-    }
+private fun MemberDescriptor.isNotFake() = this.visibility != Visibilities.INVISIBLE_FAKE
+    && (this !is CallableMemberDescriptor || this.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)

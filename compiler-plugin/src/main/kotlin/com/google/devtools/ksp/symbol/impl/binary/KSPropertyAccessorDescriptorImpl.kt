@@ -20,6 +20,7 @@ package com.google.devtools.ksp.symbol.impl.binary
 
 import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
 import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.impl.findOrigin
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationParameterImpl
@@ -29,7 +30,9 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 
 abstract class KSPropertyAccessorDescriptorImpl(val descriptor: PropertyAccessorDescriptor) : KSPropertyAccessor {
-    override val origin: Origin = Origin.CLASS
+    override val origin: Origin by lazy {
+        descriptor.findOrigin()
+    }
 
     override val receiver: KSPropertyDeclaration by lazy {
         KSPropertyDeclarationDescriptorImpl.getCached(descriptor.correspondingProperty)
