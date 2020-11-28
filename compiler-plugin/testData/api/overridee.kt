@@ -30,15 +30,15 @@
 // Subject.openGrandBaseFun() -> GrandBase.openGrandBaseFun()
 // Subject.abstractGrandBaseFun() -> GrandBase.abstractGrandBaseFun()
 // JavaSubject.Subject:
+// Subject.openGrandBaseFun() -> GrandBase.openGrandBaseFun()
+// Subject.abstractGrandBaseFun() -> GrandBase.abstractGrandBaseFun()
+// Subject.overriddenGrandBaseFun() -> Base.overriddenGrandBaseFun()
+// Subject.overriddenAbstractGrandBaseFun() -> Base.overriddenAbstractGrandBaseFun()
 // Subject.openFun() -> Base.openFun()
 // Subject.abstractFun() -> Base.abstractFun()
 // Subject.openFunWithGenericArg(t:String) -> Base.openFunWithGenericArg(t:T)
 // Subject.abstractFunWithGenericArg(t:String) -> Base.abstractFunWithGenericArg(t:T)
 // Subject.nonOverridingMethod() -> null
-// Subject.overriddenGrandBaseFun() -> Base.overriddenGrandBaseFun()
-// Subject.overriddenAbstractGrandBaseFun() -> Base.overriddenAbstractGrandBaseFun()
-// Subject.openGrandBaseFun() -> GrandBase.openGrandBaseFun()
-// Subject.abstractGrandBaseFun() -> GrandBase.abstractGrandBaseFun()
 // Subject.staticMethod() -> null
 // lib.Subject:
 // Companion.companionMethod() -> null

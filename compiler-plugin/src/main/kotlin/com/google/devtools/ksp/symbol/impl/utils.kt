@@ -25,10 +25,10 @@ import org.jetbrains.kotlin.descriptors.*
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSFunctionDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertyDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.java.KSClassDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
@@ -170,12 +170,11 @@ fun PsiElement.findParentDeclaration(): KSDeclaration? {
     while (parent != null && parent !is KtDeclaration && parent !is KtFile && parent !is PsiClass && parent !is PsiMethod && parent !is PsiJavaFile) {
         parent = parent.parent
     }
-
     return when (parent) {
         is KtClassOrObject -> KSClassDeclarationImpl.getCached(parent)
         is KtFile -> null
         is KtFunction -> KSFunctionDeclarationImpl.getCached(parent)
-        is PsiClass -> KSClassDeclarationJavaImpl.getCached(parent)
+        is PsiClass -> parent.toKSDescriptorClass()
         is PsiJavaFile -> null
         is PsiMethod -> KSFunctionDeclarationJavaImpl.getCached(parent)
         else -> null
@@ -213,16 +212,6 @@ fun KtClassOrObject.getClassType(): ClassKind {
         else -> throw IllegalStateException("Unexpected psi type ${this.javaClass}, $ExceptionMessage")
     }
 }
-
-fun List<PsiElement>.getKSJavaDeclarations() =
-    this.mapNotNull {
-        when (it) {
-            is PsiClass -> KSClassDeclarationJavaImpl.getCached(it)
-            is PsiMethod -> KSFunctionDeclarationJavaImpl.getCached(it)
-            is PsiField -> KSPropertyDeclarationJavaImpl.getCached(it)
-            else -> null
-        }
-    }
 
 fun org.jetbrains.kotlin.types.Variance.toKSVariance(): Variance {
     return when (this) {
@@ -311,4 +300,13 @@ internal fun FunctionDescriptor.findClosestOverridee(): FunctionDescriptor? {
         queue.addAll(overriddenDescriptors)
     }
     return null
+}
+
+
+internal fun PsiClass.toKSDescriptorClass() : KSClassDeclarationDescriptorImpl {
+    val descriptor = ResolverImpl.instance.resolveJavaDeclaration(this)
+    return when(descriptor) {
+        is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
+        else -> error("cannot resolve $this / $descriptor")
+    }
 }

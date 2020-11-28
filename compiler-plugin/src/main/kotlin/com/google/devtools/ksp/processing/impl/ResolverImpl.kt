@@ -165,7 +165,7 @@ class ResolverImpl(
                 if (psi != null) {
                     when (psi) {
                         is KtClassOrObject -> KSClassDeclarationImpl.getCached(psi)
-                        is PsiClass -> KSClassDeclarationJavaImpl.getCached(psi)
+                        is PsiClass -> KSClassDeclarationDescriptorImpl.getCached(it)
                         else -> throw IllegalStateException("unexpected psi: ${psi.javaClass}")
                     }
                 } else {
@@ -350,7 +350,6 @@ class ResolverImpl(
         return when (classDeclaration) {
             is KSClassDeclarationImpl -> resolveDeclaration(classDeclaration.ktClassOrObject)
             is KSClassDeclarationDescriptorImpl -> classDeclaration.descriptor
-            is KSClassDeclarationJavaImpl -> resolveJavaDeclaration(classDeclaration.psi)
             else -> throw IllegalStateException("unexpected class: ${classDeclaration.javaClass}")
         } as ClassDescriptor?
     }
@@ -466,21 +465,11 @@ class ResolverImpl(
 
     fun findDeclaration(kotlinType: KotlinType): KSDeclaration {
         val descriptor = kotlinType.constructor.declarationDescriptor
-        val psi = descriptor?.findPsi()
-        return if (psi != null && psi !is KtTypeParameter) {
-            when (psi) {
-                is KtClassOrObject -> KSClassDeclarationImpl.getCached(psi)
-                is PsiClass -> KSClassDeclarationJavaImpl.getCached(psi)
-                is KtTypeAlias -> KSTypeAliasImpl.getCached(psi)
-                else -> throw IllegalStateException("Unexpected psi type: ${psi.javaClass}, $ExceptionMessage")
-            }
-        } else {
-            when (descriptor) {
-                is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
-                is TypeParameterDescriptor -> KSTypeParameterDescriptorImpl.getCached(descriptor)
-                null -> throw IllegalStateException("Failed to resolve descriptor for $kotlinType")
-                else -> throw IllegalStateException("Unexpected descriptor type: ${descriptor.javaClass}, $ExceptionMessage")
-            }
+        return when (descriptor) {
+            is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
+            is TypeParameterDescriptor -> KSTypeParameterDescriptorImpl.getCached(descriptor)
+            null -> throw IllegalStateException("Failed to resolve descriptor for $kotlinType")
+            else -> throw IllegalStateException("Unexpected descriptor type: ${descriptor.javaClass}, $ExceptionMessage")
         }
     }
 

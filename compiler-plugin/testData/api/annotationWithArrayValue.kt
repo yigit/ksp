@@ -26,10 +26,10 @@
 // JavaAnnotated
 // KotlinAnnotation ->
 // stringArray = [j-a, j-b, null, j-c]
-// classArray = [Object, List<*>]
+// classArray = [Any, MutableList<*>]
 // JavaAnnotation ->
 // stringArray = [j-x, j-y, null, j-z]
-// classArray = [Integer, Character]
+// classArray = [Int, Char]
 // END
 // FILE: a.kt
 

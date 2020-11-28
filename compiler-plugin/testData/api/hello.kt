@@ -25,8 +25,8 @@
 // Bar.BBB
 // AClass
 // C
-// C.f
 // C.javaFun
+// C.f
 // END
 //FILE: a.kt
 package test

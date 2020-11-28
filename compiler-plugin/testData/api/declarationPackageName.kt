@@ -54,7 +54,7 @@ class Outer {
     }
 }
 
-//FILE: C.java
+//FILE: test/java/pack/C.java
 package test.java.pack;
 
 public class C {

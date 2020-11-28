@@ -21,7 +21,7 @@
 // synthetic constructor for Cls
 // <null>
 // <null>
-// JavaClass,JavaClass,JavaClass
+// <init>,<init>,<init>
 // readOnly.get(): SYNTHETIC annotations from property: GetAnno
 // readOnly.getter.owner: readOnly: KOTLIN
 // readWrite.get(): KOTLIN

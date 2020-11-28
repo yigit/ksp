@@ -27,6 +27,7 @@ import com.google.devtools.ksp.symbol.impl.binary.getAbsentDefaultArguments
 import com.google.devtools.ksp.symbol.impl.kotlin.KSErrorType
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
+import com.google.devtools.ksp.symbol.impl.toKSDescriptorClass
 import com.google.devtools.ksp.symbol.impl.toLocation
 import com.intellij.lang.jvm.JvmClassKind
 import com.intellij.psi.*
@@ -43,8 +44,9 @@ class KSAnnotationJavaImpl private constructor(val psi: PsiAnnotation) : KSAnnot
     }
 
     override val annotationType: KSTypeReference by lazy {
+        val psiClass = psi.nameReferenceElement!!.resolve() as PsiClass
         KSTypeReferenceLiteJavaImpl.getCached(
-            KSClassDeclarationJavaImpl.getCached(psi.nameReferenceElement!!.resolve() as PsiClass).asType(emptyList())
+            psiClass.toKSDescriptorClass().asType(emptyList())
         )
     }
 

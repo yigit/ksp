@@ -65,7 +65,7 @@ fun KSClassDeclaration.getDeclaredProperties(): List<KSPropertyDeclaration> {
 }
 
 fun KSClassDeclaration.getConstructors(): List<KSFunctionDeclaration> {
-    val functions = if (this.origin == Origin.JAVA) this.getAllFunctions() else this.getDeclaredFunctions()
+    val functions = this.getDeclaredFunctions()
     return functions.filter { it.simpleName.asString() == this.simpleName.asString() || it.simpleName.asString() == "<init>"}
             .let { constructors ->
                 this.primaryConstructor?.let { constructors.plus(it) } ?: constructors

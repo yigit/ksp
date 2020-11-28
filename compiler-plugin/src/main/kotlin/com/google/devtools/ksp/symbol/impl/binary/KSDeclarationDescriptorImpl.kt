@@ -18,20 +18,39 @@
 
 package com.google.devtools.ksp.symbol.impl.binary
 
+import com.google.devtools.ksp.ExceptionMessage
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.impl.findPsi
+import com.google.devtools.ksp.symbol.impl.java.KSFileJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import com.intellij.psi.PsiJavaFile
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 
 abstract class KSDeclarationDescriptorImpl(descriptor: DeclarationDescriptor) : KSDeclaration {
 
-    override val origin = Origin.CLASS
+    override val origin: Origin by lazy {
+        val fileType = descriptor.original.findPsi()?.containingFile?.fileType
+        when(fileType?.defaultExtension) {
+            "java" -> Origin.JAVA
+            "kt" -> Origin.KOTLIN
+            null -> Origin.CLASS
+            else -> error("cannot figure out file type: $fileType $ExceptionMessage") // Origin.CLASS
+        }
+    }
 
-    override val containingFile: KSFile? = null
+    override val containingFile: KSFile? by lazy {
+        descriptor.original.findPsi()?.let {
+            when(val psiFile = it.containingFile) {
+                is PsiJavaFile -> KSFileJavaImpl.getCached(psiFile)
+                else -> null // TODO?
+            }
+        }
+    }
 
     override val location: Location = NonExistLocation
 

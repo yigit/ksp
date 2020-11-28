@@ -21,6 +21,7 @@ package com.google.devtools.ksp.symbol.impl.java
 import com.intellij.psi.PsiJavaFile
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.toKSDescriptorClass
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.toLocation
 
@@ -38,7 +39,9 @@ class KSFileJavaImpl private constructor(val psi: PsiJavaFile) : KSFile {
     override val annotations: List<KSAnnotation> = emptyList()
 
     override val declarations: List<KSDeclaration> by lazy {
-        psi.classes.map { KSClassDeclarationJavaImpl.getCached(it) }
+        psi.classes.map {
+            it.toKSDescriptorClass()
+        }
     }
 
     override val fileName: String by lazy {
