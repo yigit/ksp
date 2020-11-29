@@ -28,13 +28,14 @@ import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import org.jetbrains.kotlin.types.*
 
-class KSTypeReferenceDescriptorImpl private constructor(val kotlinType: KotlinType) : KSTypeReference {
-    companion object : KSObjectCache<KotlinType, KSTypeReferenceDescriptorImpl>() {
-        fun getCached(kotlinType: KotlinType) = cache.getOrPut(kotlinType) { KSTypeReferenceDescriptorImpl(kotlinType) }
-    }
-
-    override val origin by lazy {
-        element.origin
+class KSTypeReferenceDescriptorImpl private constructor(
+    val kotlinType: KotlinType,
+    override val origin: Origin
+) : KSTypeReference {
+    companion object : KSObjectCache<Pair<KotlinType, Origin>, KSTypeReferenceDescriptorImpl>() {
+        fun getCached(kotlinType: KotlinType, origin: Origin) = cache.getOrPut(kotlinType to origin) {
+            KSTypeReferenceDescriptorImpl(kotlinType, origin)
+        }
     }
 
     override val location: Location = NonExistLocation

@@ -52,7 +52,6 @@ class OverrideeProcessor: AbstractTestProcessor() {
 
     private fun logClass(subject: KSClassDeclaration) {
         subject.declarations.filterIsInstance<KSFunctionDeclaration>()
-            .filterNot { it.simpleName.asString() != "<init>" }
             .forEach {
                 val signature = it.toSignature()
                 val overrideeSignature = it.findOverridee()?.toSignature()

@@ -46,7 +46,7 @@ class ResolveJavaTypeProcessor : AbstractTestProcessor() {
 
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
             if (function.simpleName.asString() == "wildcardParam") {
-                function.parameters[0].type!!.accept(this, Unit)
+                function.parameters[0].type.accept(this, Unit)
             }
             function.returnType?.accept(this, Unit)
         }
@@ -62,12 +62,13 @@ class ResolveJavaTypeProcessor : AbstractTestProcessor() {
         val sb = StringBuilder(this.resolve().declaration.qualifiedName?.asString() ?: "<ERROR>")
         if (this.resolve().arguments.isNotEmpty()) {
             sb.append("<${this.resolve().arguments.map {
+                val typeRender = it.type?.render()
                 when (it.variance) {
                     Variance.STAR -> "*"
-                    Variance.INVARIANT -> ""
-                    Variance.CONTRAVARIANT -> "in "
-                    Variance.COVARIANT -> "out "
-                } + it.type?.render() 
+                    Variance.INVARIANT -> typeRender
+                    Variance.CONTRAVARIANT -> "in $typeRender"
+                    Variance.COVARIANT -> "out $typeRender"
+                }
             }.joinToString(", ")}>")
         }
         if (this.resolve().nullability != Nullability.NOT_NULL) {

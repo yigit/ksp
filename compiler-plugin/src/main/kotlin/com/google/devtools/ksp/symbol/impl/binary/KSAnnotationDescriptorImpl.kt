@@ -50,7 +50,7 @@ class KSAnnotationDescriptorImpl private constructor(val descriptor: AnnotationD
     override val location: Location = NonExistLocation
 
     override val annotationType: KSTypeReference by lazy {
-        KSTypeReferenceDescriptorImpl.getCached(descriptor.type)
+        KSTypeReferenceDescriptorImpl.getCached(descriptor.type, origin)
     }
 
     override val arguments: List<KSValueArgument> by lazy {

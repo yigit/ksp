@@ -26,6 +26,7 @@ import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.KSVisitor
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeReferenceDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.findOrigin
 
 class KSPropertyGetterSyntheticImpl(val ksPropertyDeclaration: KSPropertyDeclaration) :
     KSPropertyAccessorSyntheticImpl(ksPropertyDeclaration), KSPropertyGetter {
@@ -40,7 +41,7 @@ class KSPropertyGetterSyntheticImpl(val ksPropertyDeclaration: KSPropertyDeclara
 
     override val returnType: KSTypeReference? by lazy {
         if (descriptor.returnType != null) {
-            KSTypeReferenceDescriptorImpl.getCached(descriptor.returnType!!)
+            KSTypeReferenceDescriptorImpl.getCached(descriptor.returnType!!, descriptor.findOrigin())
         } else {
             null
         }

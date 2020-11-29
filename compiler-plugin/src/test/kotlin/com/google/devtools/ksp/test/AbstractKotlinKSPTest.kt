@@ -99,7 +99,12 @@ abstract class AbstractKotlinKSPTest : KotlinBaseTest<AbstractKotlinKSPTest.KspT
         dependencies: List<File>,
         testProcessor: AbstractTestProcessor?) {
         val moduleRoot = module.rootDir
-        module.writeJavaFiles(testFiles)
+        val hasJavaSources = testFiles.any {
+            it.isJavaFile()
+        }
+        if (hasJavaSources) {
+            module.writeJavaFiles(testFiles)
+        }
         val configuration = createConfiguration(
             ConfigurationKind.NO_KOTLIN_REFLECT,
             TestJdkKind.FULL_JDK_9,
@@ -133,6 +138,28 @@ abstract class AbstractKotlinKSPTest : KotlinBaseTest<AbstractKotlinKSPTest.KspT
             GenerationUtils.compileFiles(moduleFiles.psiFiles, environment, ClassBuilderFactories.TEST)
         } else {
             GenerationUtils.compileFilesTo(moduleFiles.psiFiles, environment, outDir)
+            if (hasJavaSources) {
+                // need to compile java sources as well
+                val javaOutDir = module.rootDir.resolve("javaOut")
+                val classpath =
+                    (listOf(KotlinTestUtils.getAnnotationsJar()) + dependencies + module.outDir).joinToString(
+                        ":"
+                    ) {
+                        it.absolutePath
+                    }
+                val options = listOf(
+                    "-classpath", classpath,
+                    "-d", javaOutDir.absolutePath
+                )
+                val toList = module.javaSrcDir.listFiles().orEmpty().toList()
+                val recursive = module.javaSrcDir.listFilesRecursively()
+                KotlinTestUtils.compileJavaFiles(
+                    recursive,
+                    options
+                )
+                // merge java outputs into module's out dir
+                javaOutDir.copyRecursively(target = module.outDir, overwrite = false)
+            }
         }
     }
 
@@ -180,6 +207,17 @@ abstract class AbstractKotlinKSPTest : KotlinBaseTest<AbstractKotlinKSPTest.KspT
     private val TestModule.outDir:File
         get() = File(rootDir, "out")
 
+    private fun KspTestFile.isJavaFile() = name.endsWith(".java")
+
+    private fun File.listFilesRecursively(): List<File> = if (!this.exists()) {
+        emptyList()
+    } else if (this.isDirectory) {
+        this.listFiles()?.flatMap {
+            it.listFilesRecursively()
+        }.orEmpty()
+    } else {
+        listOf(this)
+    }
     /**
      * TestFile class for KSP where we can also keep a reference to the [TestModule]
      */

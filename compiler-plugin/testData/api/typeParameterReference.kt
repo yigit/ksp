@@ -19,6 +19,7 @@
 // TEST PROCESSOR: TypeParameterReferenceProcessor
 // EXPECTED:
 // Foo.T1: true
+// Foo.T1: true
 // Foo.bar.T2: false
 // foo.T3: false
 // END

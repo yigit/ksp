@@ -114,6 +114,9 @@ fun PsiModifierListOwner.toKSModifiers(): Set<Modifier> {
 }
 
 fun MemberDescriptor.toKSModifiers(): Set<Modifier> {
+    (findPsi() as? PsiModifierListOwner)?.let {
+        return it.toKSModifiers()
+    }
     val modifiers = mutableSetOf<Modifier>()
     if (this.isActual) {
         modifiers.add(Modifier.ACTUAL)

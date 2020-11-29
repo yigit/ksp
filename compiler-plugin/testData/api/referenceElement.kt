@@ -19,16 +19,24 @@
 // TEST PROCESSOR: ReferenceElementProcessor
 // EXPECTED:
 // KSClassifierReferenceImpl: Qualifier of B is A
+// KSClassifierReferenceImpl: Qualifier of B is A
 // KSClassifierReferenceImpl: Qualifier of C is A
+// KSClassifierReferenceImpl: Qualifier of C<Int> is A<String>
+// KSClassifierReferenceImpl: Qualifier of Int is null
 // KSClassifierReferenceImpl: Qualifier of Int is null
 // KSClassifierReferenceImpl: Qualifier of String is null
+// KSClassifierReferenceImpl: Qualifier of String is null
+// KSClassifierReferenceDescriptorImpl: Qualifier of B is A
 // KSClassifierReferenceDescriptorImpl: Qualifier of B is A
 // KSClassifierReferenceDescriptorImpl: Qualifier of C<Int> is A<String>
+// KSClassifierReferenceDescriptorImpl: Qualifier of C<Int> is A<String>
+// KSClassifierReferenceDescriptorImpl: Qualifier of Int is null
 // KSClassifierReferenceDescriptorImpl: Qualifier of Int is null
 // KSClassifierReferenceDescriptorImpl: Qualifier of String is null
-// KSClassifierReferenceJavaImpl: Qualifier of H is J<String>
+// KSClassifierReferenceDescriptorImpl: Qualifier of String is null
+// KSClassifierReferenceJavaImpl: Qualifier of Any is null
+// KSClassifierReferenceJavaImpl: Qualifier of H is J<(kotlin.String..kotlin.String?)>
 // KSClassifierReferenceJavaImpl: Qualifier of I is J
-// KSClassifierReferenceJavaImpl: Qualifier of Object is null
 // KSClassifierReferenceJavaImpl: Qualifier of String is null
 // END
 

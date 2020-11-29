@@ -19,7 +19,7 @@
 // EXPECTED:
 // kotlin.Int
 // kotlin.String?
-// kotlin.collections.MutableSet<out kotlin.Any?>?
+// kotlin.collections.MutableSet<*>?
 // kotlin.Unit
 // kotlin.IntArray?
 // C.T?

@@ -22,9 +22,11 @@ import com.google.devtools.ksp.ExceptionMessage
 import org.jetbrains.kotlin.descriptors.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
+import com.intellij.psi.PsiMethod
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
@@ -53,7 +55,11 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
     }
 
     override fun getAllFunctions(): List<KSFunctionDeclaration> {
-        return descriptor.unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS).toList()
+        return listOf(
+            descriptor.unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS),
+            descriptor.staticScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS),
+            descriptor.constructors
+        ).flatten()
             .filter { (it as FunctionDescriptor).visibility != Visibilities.INVISIBLE_FAKE }
             .map { KSFunctionDeclarationDescriptorImpl.getCached(it as FunctionDescriptor) }
     }
@@ -71,7 +77,8 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
     override val superTypes: List<KSTypeReference> by lazy {
         descriptor.defaultType.constructor.supertypes.map {
             KSTypeReferenceDescriptorImpl.getCached(
-                it
+                it,
+                origin
             )
         }
     }
@@ -87,9 +94,18 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
             descriptor.constructors
         ).flatten()
             .filter {
-                it is MemberDescriptor
+                val realMethod = it is MemberDescriptor
                         && it.visibility != Visibilities.INHERITED
                         && it.isNotFake()
+                // synthetic constructors might show as real methods too, remove them
+                if (!realMethod) {
+                    false
+                } else if (it.name.asString() != "<init>") {
+                    true
+                } else {
+                    // make sure it is a real method
+                    it.findPsi() is PsiMethod
+                }
             }
             .map {
                 when (it) {

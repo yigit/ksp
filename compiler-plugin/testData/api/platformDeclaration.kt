@@ -32,7 +32,6 @@
 // Actual.kt : bar : true : false : [] : [Expect.kt]
 // Actual.kt : baz : true : false : [] : [Expect.kt]
 // Coffee.java : Coffee : false : false : [] : []
-// Coffee.java : Coffee.<init> : false : false : [] : []
 // Coffee.java : Coffee.baz : false : false : [] : []
 // Coffee.java : Coffee.foo : false : false : [] : []
 // Expect.kt : ActualNotFoundClass : false : true : [] : []

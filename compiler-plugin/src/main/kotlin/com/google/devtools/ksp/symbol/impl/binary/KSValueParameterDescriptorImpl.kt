@@ -57,7 +57,7 @@ class KSValueParameterDescriptorImpl private constructor(val descriptor: ValuePa
     }
 
     override val type: KSTypeReference by lazy {
-        KSTypeReferenceDescriptorImpl.getCached(descriptor.type)
+        KSTypeReferenceDescriptorImpl.getCached(descriptor.type, origin)
     }
 
     override val hasDefault: Boolean = descriptor.hasDefaultValue()

@@ -23,6 +23,7 @@ import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
+import org.jetbrains.kotlin.descriptors.NotFoundClasses
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.getAbbreviation
 import org.jetbrains.kotlin.types.isError
@@ -59,7 +60,10 @@ class KSTypeImpl private constructor(
      * Even though that [KSTypeArgumentDescriptorImpl] is no heavier than [ksTypeArguments], the former doesn't carry [KSAnnotation].
      */
     override val arguments: List<KSTypeArgument> by lazy {
-        ksTypeArguments ?: kotlinType.arguments.map { KSTypeArgumentDescriptorImpl.getCached(it) }
+        ksTypeArguments ?: kotlinType.arguments.map {
+            // TODO where can we get this origin from?
+            KSTypeArgumentDescriptorImpl.getCached(it, Origin.CLASS)
+        }
     }
 
     override fun isAssignableFrom(that: KSType): Boolean = (that as? KSTypeImpl)?.kotlinType?.isSubtypeOf(kotlinType) == true
@@ -113,7 +117,8 @@ fun getKSTypeCached(
     ksTypeArguments: List<KSTypeArgument>? = null,
     annotations: List<KSAnnotation> = listOf()
 ): KSType {
-    return if (kotlinType.isError) {
+    val err = kotlinType.constructor.declarationDescriptor is NotFoundClasses.MockClassDescriptor
+    return if (err || kotlinType.isError) {
         KSErrorType
     } else {
         KSTypeImpl.getCached(kotlinType, ksTypeArguments, annotations)

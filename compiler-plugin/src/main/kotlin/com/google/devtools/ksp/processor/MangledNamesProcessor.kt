@@ -56,7 +56,6 @@ class MangledNamesProcessor : AbstractTestProcessor() {
         }
 
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: MutableMap<String, String>) {
-            if (function.simpleName.asString() == "<init>") return
             super.visitFunctionDeclaration(function, data)
             data[function.simpleName.asString()] = resolver.getJvmName(function)
         }
