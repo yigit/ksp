@@ -29,7 +29,6 @@ import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorIm
 import com.google.devtools.ksp.symbol.impl.binary.KSFunctionDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertyDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
@@ -180,7 +179,7 @@ fun PsiElement.findParentDeclaration(): KSDeclaration? {
         is KtFunction -> KSFunctionDeclarationImpl.getCached(parent)
         is PsiClass -> parent.toKSDescriptorClass()
         is PsiJavaFile -> null
-        is PsiMethod -> KSFunctionDeclarationJavaImpl.getCached(parent)
+        is PsiMethod -> parent.toKSFunctionDeclaration()
         else -> null
     }
 }
@@ -255,7 +254,7 @@ internal fun FunctionDescriptor.toKSFunctionDeclaration(): KSFunctionDeclaration
     }
     return when (psi) {
         is KtFunction -> KSFunctionDeclarationImpl.getCached(psi)
-        is PsiMethod -> KSFunctionDeclarationJavaImpl.getCached(psi)
+        is PsiMethod -> KSFunctionDeclarationDescriptorImpl.getCached(this)
         else -> throw IllegalStateException("unexpected psi: ${psi.javaClass}")
     }
 }
@@ -311,6 +310,14 @@ internal fun PsiClass.toKSDescriptorClass() : KSClassDeclarationDescriptorImpl {
     val descriptor = ResolverImpl.instance.resolveJavaDeclaration(this)
     return when(descriptor) {
         is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
+        else -> error("cannot resolve $this / $descriptor")
+    }
+}
+
+internal fun PsiMethod.toKSFunctionDeclaration() : KSFunctionDeclaration {
+    val descriptor = ResolverImpl.instance.resolveJavaDeclaration(this)
+    return when(descriptor) {
+        is FunctionDescriptor ->  descriptor.toKSFunctionDeclaration()
         else -> error("cannot resolve $this / $descriptor")
     }
 }

@@ -263,7 +263,6 @@ class ResolverImpl(
         fun resolveForOverride(declaration: KSDeclaration): DeclarationDescriptor? {
             return when(declaration) {
                 is KSPropertyDeclaration -> resolvePropertyDeclaration(declaration)
-                is KSFunctionDeclarationJavaImpl -> resolveJavaDeclaration(declaration.psi)
                 is KSFunctionDeclaration -> resolveFunctionDeclaration(declaration)
                 else -> null
             }
@@ -359,7 +358,6 @@ class ResolverImpl(
         return when (function) {
             is KSFunctionDeclarationImpl -> resolveDeclaration(function.ktFunction)
             is KSFunctionDeclarationDescriptorImpl -> function.descriptor
-            is KSFunctionDeclarationJavaImpl -> resolveJavaDeclaration(function.psi)
             is KSConstructorSyntheticImpl -> resolveClassDeclaration(function.ksClassDeclaration)?.unsubstitutedPrimaryConstructor
             else -> throw IllegalStateException("unexpected class: ${function.javaClass}")
         } as FunctionDescriptor?
