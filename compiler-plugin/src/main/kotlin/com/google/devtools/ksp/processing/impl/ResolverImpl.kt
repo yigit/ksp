@@ -275,9 +275,6 @@ class ResolverImpl(
         if (!(overridee is KSFunctionDeclaration || overrider is KSFunctionDeclaration || (overridee is KSPropertyDeclaration && overrider is KSPropertyDeclaration)))
             return false
 
-        if (overrider is KSPropertyDeclarationJavaImpl)
-            return false
-
         val superDescriptor = resolveForOverride(overridee) as? CallableMemberDescriptor ?: return false
         val subDescriptor = resolveForOverride(overrider) as? CallableMemberDescriptor ?: return false
         val subClassDescriptor = overrider.closestClassDeclaration()?.let {
@@ -368,7 +365,6 @@ class ResolverImpl(
             is KSPropertyDeclarationImpl -> resolveDeclaration(property.ktProperty)
             is KSPropertyDeclarationParameterImpl -> resolveDeclaration(property.ktParameter)
             is KSPropertyDeclarationDescriptorImpl -> property.descriptor
-            is KSPropertyDeclarationJavaImpl -> resolveJavaDeclaration(property.psi)
             else -> throw IllegalStateException("unexpected class: ${property.javaClass}")
         } as PropertyDescriptor?
     }

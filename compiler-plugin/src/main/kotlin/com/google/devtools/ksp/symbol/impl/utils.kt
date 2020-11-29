@@ -29,7 +29,6 @@ import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorIm
 import com.google.devtools.ksp.symbol.impl.binary.KSFunctionDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertyDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
 import com.intellij.psi.impl.source.PsiClassImpl
@@ -265,7 +264,7 @@ internal fun PropertyDescriptor.toKSPropertyDeclaration(): KSPropertyDeclaration
     return when (psi) {
         is KtProperty -> KSPropertyDeclarationImpl.getCached(psi)
         is KtParameter -> KSPropertyDeclarationParameterImpl.getCached(psi)
-        is PsiField -> KSPropertyDeclarationJavaImpl.getCached(psi)
+        is PsiField -> psi.toKSPropertyDeclaration()
         else -> throw IllegalStateException("unexpected psi: ${psi.javaClass}")
     }
 }
@@ -318,6 +317,14 @@ internal fun PsiMethod.toKSFunctionDeclaration() : KSFunctionDeclaration {
     val descriptor = ResolverImpl.instance.resolveJavaDeclaration(this)
     return when(descriptor) {
         is FunctionDescriptor ->  descriptor.toKSFunctionDeclaration()
+        else -> error("cannot resolve $this / $descriptor")
+    }
+}
+
+internal fun PsiField.toKSPropertyDeclaration() : KSPropertyDeclaration {
+    val descriptor = ResolverImpl.instance.resolveJavaDeclaration(this)
+    return when(descriptor) {
+        is PropertyDescriptor -> descriptor.toKSPropertyDeclaration()
         else -> error("cannot resolve $this / $descriptor")
     }
 }
