@@ -70,6 +70,7 @@ import org.jetbrains.kotlin.resolve.jvm.multiplatform.JavaActualAnnotationArgume
 import org.jetbrains.kotlin.resolve.lazy.DeclarationScopeProvider
 import org.jetbrains.kotlin.resolve.lazy.ForceResolveUtil
 import org.jetbrains.kotlin.resolve.lazy.ResolveSession
+import org.jetbrains.kotlin.resolve.lazy.descriptors.LazyTypeAliasDescriptor
 import org.jetbrains.kotlin.resolve.multiplatform.findActuals
 import org.jetbrains.kotlin.resolve.multiplatform.findExpects
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
@@ -468,6 +469,13 @@ class ResolverImpl(
         return when (descriptor) {
             is ClassDescriptor -> KSClassDeclarationDescriptorImpl.getCached(descriptor)
             is TypeParameterDescriptor -> KSTypeParameterDescriptorImpl.getCached(descriptor)
+            is TypeAliasDescriptor -> {
+                val psi = descriptor.findPsi()
+                check(psi is KtTypeAlias) {
+                    "expected type alias, found ${psi} (${psi?.javaClass})"
+                }
+                KSTypeAliasImpl.getCached(psi)
+            }
             null -> throw IllegalStateException("Failed to resolve descriptor for $kotlinType")
             else -> throw IllegalStateException("Unexpected descriptor type: ${descriptor.javaClass}, $ExceptionMessage")
         }
