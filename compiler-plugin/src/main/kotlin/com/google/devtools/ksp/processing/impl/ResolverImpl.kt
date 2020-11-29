@@ -424,36 +424,6 @@ class ResolverImpl(
             is KSTypeReferenceDescriptorImpl -> {
                 return getKSTypeCached(type.kotlinType)
             }
-            is KSTypeReferenceJavaImpl -> {
-                val psi = (type.psi as? PsiClassReferenceType)?.resolve()
-                if (psi is PsiTypeParameter) {
-                    val containingDeclaration = if (psi.owner is PsiClass) {
-                        moduleClassResolver.resolveClass(JavaClassImpl(psi.owner as PsiClass))
-                    } else {
-                        val owner = psi.owner
-                        check(owner is PsiMethod) {
-                            "unexpected owner type: $owner / ${owner?.javaClass}"
-                        }
-                        moduleClassResolver.resolveClass(
-                            JavaMethodImpl(owner).containingClass
-                        )?.findEnclosedDescriptor(
-                            kindFilter = DescriptorKindFilter.FUNCTIONS,
-                            filter = { it.findPsi() == owner }
-                        ) as FunctionDescriptor
-                    } as DeclarationDescriptor
-                    return getKSTypeCached(
-                        LazyJavaTypeParameterDescriptor(
-                            lazyJavaResolverContext,
-                            JavaTypeParameterImpl(psi),
-                            psi.index,
-                            containingDeclaration
-                        ).defaultType
-                    )
-
-                } else {
-                    return getKSTypeCached(resolveJavaType(type.psi), type.element.typeArguments, type.annotations)
-                }
-            }
             else -> throw IllegalStateException("Unable to resolve type for $type, $ExceptionMessage")
         }
     }

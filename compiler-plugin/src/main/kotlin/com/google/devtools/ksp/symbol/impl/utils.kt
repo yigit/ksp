@@ -29,7 +29,6 @@ import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorIm
 import com.google.devtools.ksp.symbol.impl.binary.KSFunctionDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertyDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
 import com.intellij.psi.impl.source.PsiClassImpl
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
@@ -236,7 +235,7 @@ internal fun KotlinType.replaceTypeArguments(newArguments: List<KSTypeArgument>)
         }
 
         val type = when (ksTypeArgument) {
-            is KSTypeArgumentKtImpl, is KSTypeArgumentJavaImpl, is KSTypeArgumentLiteImpl -> ksTypeArgument.type!!
+            is KSTypeArgumentKtImpl, is KSTypeArgumentLiteImpl -> ksTypeArgument.type!!
             is KSTypeArgumentDescriptorImpl -> return@mapIndexed ksTypeArgument.descriptor
             else -> throw IllegalStateException("Unexpected psi for type argument: ${ksTypeArgument.javaClass}, $ExceptionMessage")
         }.toKotlinType()
