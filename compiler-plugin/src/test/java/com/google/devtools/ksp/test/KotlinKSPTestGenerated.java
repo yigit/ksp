@@ -227,6 +227,11 @@ public class KotlinKSPTestGenerated extends AbstractKotlinKSPTest {
         runTest("testData/api/visibilities.kt");
     }
 
+    @TestMetadata("declarationInconsistency.kt")
+    public void testDeclarationInconsistency() throws Exception {
+        runTest("testData/api/declarationInconsistency.kt");
+    }
+
     @Override
     protected @NotNull List<KspTestFile> createTestFilesFromFile(@NotNull File file, @NotNull String expectedText) {
         return TestFiles.createTestFiles(file.getName(), expectedText, new TestFiles.TestFileFactory<TestModule, KspTestFile>() {
