@@ -47,7 +47,8 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
         KotlinCompilerPluginSupportPlugin {
     companion object {
         const val KSP_CONFIGURATION_NAME = "ksp"
-        const val KSP_ARTIFACT_NAME = "symbol-processing"
+        // gradle integration tests might pass a different artifact name
+        val KSP_ARTIFACT_NAME = System.getenv("KSP_ARTIFACT_NAME") ?: "symbol-processing"
         const val KSP_PLUGIN_ID = "com.google.devtools.ksp.symbol-processing"
 
         @JvmStatic
