@@ -14,9 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.devtools.ksp.gradle.model.builder
+package com.google.devtools.ksp.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.devtools.ksp.gradle.processor.TestSymbolProcessor
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.Resolver
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -36,14 +39,38 @@ class GradleCompilationTest {
             class Foo {
             }
         """.trimIndent())
-        testRule.addProcessor(
-            ProcessorTemplate.create { props ->
-                """${props.logger}.error("processor failure")"""
+        class ErrorReporting : TestSymbolProcessor() {
+            override fun process(resolver: Resolver) {
+                logger.error("processor failure")
             }
-        )
+        }
+        testRule.setProcessor(ErrorReporting::class)
         val failure = testRule.runner()
             .withArguments("app:assemble")
             .buildAndFail()
         assertThat(failure.output).contains("processor failure")
+    }
+
+    @Test
+    fun applicationCanAccessGeneratedCode() {
+        testRule.setupAppAsJvmApp()
+        testRule.addApplicationSource("Foo.kt", """
+            class Foo {
+                val x = ToBeGenerated()
+            }
+        """.trimIndent())
+        class MyProcessor : TestSymbolProcessor() {
+            override fun process(resolver: Resolver) {
+                codeGenerator.createNewFile(Dependencies.ALL_FILES, "", "Generated").use {
+                    it.writer(Charsets.UTF_8).use {
+                        it.write("class ToBeGenerated")
+                    }
+                }
+            }
+        }
+        testRule.setProcessor(MyProcessor::class)
+        testRule.runner()
+            .withArguments("app:assemble")
+            .build()
     }
 }

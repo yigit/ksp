@@ -36,7 +36,6 @@ import org.jetbrains.kotlin.gradle.plugin.mapClasspath
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaCompilation
-import org.jetbrains.kotlin.gradle.tasks.KOTLIN_BUILD_DIR_NAME
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.incremental.ChangedFiles
 import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
@@ -48,7 +47,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
     companion object {
         const val KSP_CONFIGURATION_NAME = "ksp"
         // gradle integration tests might pass a different artifact name
-        val KSP_ARTIFACT_NAME = System.getenv("KSP_ARTIFACT_NAME") ?: "symbol-processing"
+        val DEFAULT_KSP_ARTIFACT_NAME = "symbol-processing"
         const val KSP_PLUGIN_ID = "com.google.devtools.ksp.symbol-processing"
 
         @JvmStatic
@@ -76,8 +75,14 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
                 File(project.project.buildDir, "kspCaches/$sourceSetName")
     }
 
+    lateinit var artifactName: String
     override fun apply(project: Project) {
         project.extensions.create("ksp", KspExtension::class.java)
+        artifactName = if (project.hasProperty("KSP_ARTIFACT_NAME")) {
+            project.properties.get("KSP_ARTIFACT_NAME") as String
+        } else {
+            DEFAULT_KSP_ARTIFACT_NAME
+        }
         project.configurations.create(KSP_CONFIGURATION_NAME)
 
         registry.register(KspModelBuilder())
@@ -155,7 +160,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
 
     override fun getCompilerPluginId() = KSP_PLUGIN_ID
     override fun getPluginArtifact(): SubpluginArtifact =
-            SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = KSP_ARTIFACT_NAME, version = javaClass.`package`.implementationVersion)
+            SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = artifactName, version = javaClass.`package`.implementationVersion)
 }
 
 // Copied from kotlin-gradle-plugin, because they are internal.

@@ -14,14 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.devtools.ksp.gradle.model.builder
+package com.google.devtools.ksp.gradle
 
+import com.google.devtools.ksp.processing.SymbolProcessor
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import java.io.File
 import java.util.Properties
+import kotlin.reflect.KClass
 
 class KspIntegrationTestRule(
     private val tmpFolder: TemporaryFolder
@@ -32,17 +34,14 @@ class KspIntegrationTestRule(
 
     fun runner() = GradleRunner.create()
         .withProjectDir(rootDir)
-        .withEnvironment(mapOf(
-            "KSP_ARTIFACT_NAME" to "symbol-processing-for-tests"
-        ))
+        .withDebug(true)
+        .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
 
-    fun addProcessor(processorTemplate: ProcessorTemplate) {
-        processorModuleDir.servicesFile.appendText("${processorTemplate.qName}\n")
-        processorModuleDir.kotlinSourceDir.resolve(processorTemplate.filePath).also {
-            it.parentFile.mkdirs()
-        }.writeText(
-            processorTemplate.toCode()
-        )
+    fun setProcessor(processor: KClass<out SymbolProcessor>) {
+        val qName = checkNotNull(processor.java.name) {
+            "Must provide a class that can be loaded by qualified name"
+        }
+        processorModuleDir.servicesFile.writeText("$qName\n")
     }
 
     fun setupAppAsJvmApp() {
@@ -102,9 +101,14 @@ class KspIntegrationTestRule(
             dependencies {
                 // notice that we use api instead of symbol-processing-api to match the module name
                 implementation("com.google.devtools.ksp:api")
+                implementation(files("${testConfig.processorClasspath}"))
             }
         """.trimIndent()
         processorModuleDir.resolve("build.gradle.kts").writeText(processorBuildFile)
+
+        rootDir.resolve("gradle.properties").writeText(
+            "KSP_ARTIFACT_NAME=symbol-processing-for-tests"
+        )
     }
 
     override fun failed(e: Throwable?, description: Description?) {
@@ -124,7 +128,8 @@ class KspIntegrationTestRule(
 
     data class TestConfig(
         val kspProjectDir: File,
-        val testDataDir: File
+        val testDataDir: File,
+        val processorClasspath: String
     ) {
         private val kspProjectProperties by lazy {
             Properties().also { props ->
@@ -144,7 +149,8 @@ class KspIntegrationTestRule(
                 }
                 return TestConfig(
                     kspProjectDir = File(props.get("kspProjectRootDir") as String),
-                    testDataDir = File(props.get("testDataDir") as String)
+                    testDataDir = File(props.get("testDataDir") as String),
+                    processorClasspath = props.get("processorClasspath") as String
                 )
             }
         }

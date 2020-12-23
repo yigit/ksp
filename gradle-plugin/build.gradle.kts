@@ -22,6 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinBaseVersion")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinBaseVersion")
     testImplementation(gradleApi())
+    testImplementation(project(":api"))
     testImplementation("junit:junit:$junitVersion")
     testImplementation("com.google.truth:truth:$googleTruthVersion")
     testImplementation(gradleTestKit())
@@ -77,6 +78,7 @@ val writeTestPropsTask = tasks.register<WriteProperties>("prepareTestConfigurati
     })
     property("kspProjectRootDir", rootProject.projectDir.absolutePath)
     property("testDataDir", project.projectDir.resolve("src/test-data").absolutePath)
+    property("processorClasspath", project.tasks["compileTestKotlin"].outputs.files.asPath)
 }
 
 java {
