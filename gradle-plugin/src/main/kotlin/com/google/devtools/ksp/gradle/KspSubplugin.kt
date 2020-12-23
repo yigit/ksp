@@ -17,7 +17,10 @@
 
 package com.google.devtools.ksp.gradle
 
+import com.android.build.api.dsl.AndroidSourceSet
+import com.android.build.api.dsl.CommonExtension
 import com.google.devtools.ksp.gradle.model.builder.KspModelBuilder
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
@@ -26,11 +29,20 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.SourceSetOutput
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
+import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
+import org.jetbrains.kotlin.gradle.plugin.mapClasspath
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmCompilation
@@ -39,13 +51,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.incremental.ChangedFiles
 import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 import java.io.File
+import java.util.Locale
 import javax.inject.Inject
 
 class KspGradleSubplugin @Inject internal constructor(private val registry: ToolingModelBuilderRegistry) :
         KotlinCompilerPluginSupportPlugin {
     companion object {
-        const val KSP_CONFIGURATION_NAME = "ksp"
-        const val KSP_ARTIFACT_NAME = "symbol-processing"
+        const val KSP_MAIN_CONFIGURATION_NAME = "ksp"
+        // gradle integration tests might pass a different artifact name
+        val DEFAULT_KSP_ARTIFACT_NAME = "symbol-processing"
         const val KSP_PLUGIN_ID = "com.google.devtools.ksp.symbol-processing"
 
         @JvmStatic
@@ -73,11 +87,92 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
                 File(project.project.buildDir, "kspCaches/$sourceSetName")
     }
 
+    lateinit var artifactName: String
+
+    @OptIn(ExperimentalStdlibApi::class)
+    private val KotlinSourceSet.kspConfigurationName: String
+        get() {
+            return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
+                KSP_MAIN_CONFIGURATION_NAME
+            } else {
+                "$KSP_MAIN_CONFIGURATION_NAME${name.capitalize(Locale.US)}"
+            }
+        }
+    private fun KotlinSourceSet.kspConfiguration(project: Project): Configuration? {
+        val configName = kspConfigurationName
+
+        return project.configurations.findByName(configName)
+    }
+    @OptIn(ExperimentalStdlibApi::class)
+    private val AndroidSourceSet.kspConfigurationName: String
+        get() {
+            return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
+                KSP_MAIN_CONFIGURATION_NAME
+            } else {
+                "$KSP_MAIN_CONFIGURATION_NAME${name.capitalize(Locale.US)}"
+            }
+        }
     override fun apply(project: Project) {
         project.extensions.create("ksp", KspExtension::class.java)
-        project.configurations.create(KSP_CONFIGURATION_NAME)
-
+        artifactName = if (project.hasProperty("KSP_ARTIFACT_NAME")) {
+            project.properties.get("KSP_ARTIFACT_NAME") as String
+        } else {
+            DEFAULT_KSP_ARTIFACT_NAME
+        }
+        project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+            // kotlin extension has the compilation target that we need to look for to create configurations
+            decorateKotlinExtension(project)
+        }
+        project.pluginManager.withPlugin("com.android.application") {
+            // for android apps, we need a configuration per source set
+            decorateAndroidExtension(project)
+        }
+        project.pluginManager.withPlugin("com.android.library") {
+            // for android libraries, we need a configuration per source set
+            decorateAndroidExtension(project)
+        }
         registry.register(KspModelBuilder())
+    }
+
+    private fun decorateKotlinExtension(project:Project) {
+        project.extensions.configure(KotlinSingleTargetExtension::class.java) { kotlinExtension ->
+            kotlinExtension.target.compilations.createKspConfigurations(project) { kotlinCompilation ->
+                kotlinCompilation.kotlinSourceSets.map {
+                    it.kspConfigurationName
+                }
+            }
+        }
+    }
+
+    private fun decorateAndroidExtension(project:Project) {
+        @Suppress("UnstableApiUsage")
+        project.extensions.configure(CommonExtension::class.java) {
+            it.sourceSets.createKspConfigurations(project) { androidSourceSet ->
+                listOf(androidSourceSet.kspConfigurationName)
+            }
+        }
+    }
+
+    /**
+     * Creates a KSP configuration for each element in the object container.
+     */
+    private fun<T> NamedDomainObjectContainer<T>.createKspConfigurations(
+        project: Project,
+        getKspConfigurationNames : (T)-> List<String>
+    ) {
+        val mainConfiguration = project.configurations.maybeCreate(KSP_MAIN_CONFIGURATION_NAME)
+        all {
+            getKspConfigurationNames(it).forEach { kspConfigurationName ->
+                if (kspConfigurationName != KSP_MAIN_CONFIGURATION_NAME) {
+                    val existing = project.configurations.findByName(kspConfigurationName)
+                    if (existing == null) {
+                        project.configurations.create(kspConfigurationName) {
+                            it.extendsFrom(mainConfiguration)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
@@ -89,14 +184,20 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
         val javaCompile = findJavaTaskForKotlinCompilation(kotlinCompilation)?.get()
         val kspExtension = project.extensions.getByType(KspExtension::class.java)
 
-        val kspConfiguration: Configuration = project.configurations.findByName(KSP_CONFIGURATION_NAME)
-                ?: return project.provider { emptyList() }
-
+        val kspConfigurations = LinkedHashSet<Configuration>()
+        kotlinCompilation.allKotlinSourceSets.forEach {
+            it.kspConfiguration(project)?.let {
+                kspConfigurations.add(it)
+            }
+        }
+        val nonEmptyKspConfigurations = kspConfigurations.filter { it.dependencies.isNotEmpty() }
+        if (nonEmptyKspConfigurations.isEmpty()) {
+            return project.provider { emptyList() }
+        }
         val options = mutableListOf<SubpluginOption>()
+        options += FilesSubpluginOption("apclasspath", nonEmptyKspConfigurations.flatten())
 
-        options += FilesSubpluginOption("apclasspath", kspConfiguration)
-
-        val sourceSetName = kotlinCompilation.compilationName ?: "default"
+        val sourceSetName = kotlinCompilation.compilationName
         val classOutputDir = getKspClassOutputDir(project, sourceSetName)
         val javaOutputDir = getKspJavaOutputDir(project, sourceSetName)
         val kotlinOutputDir = getKspKotlinOutputDir(project, sourceSetName)
@@ -134,9 +235,11 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
             kspTask.mapClasspath { kotlinCompileProvider.get().classpath }
             kspTask.options = options
             kspTask.outputs.dirs(kotlinOutputDir, javaOutputDir, classOutputDir, resourceOutputDir)
-            kspTask.dependsOn(kspConfiguration.buildDependencies)
             // depends on the processor; if the processor changes, it needs to be reprocessed.
-            kspTask.source(kspConfiguration)
+            nonEmptyKspConfigurations.forEach {
+                kspTask.dependsOn(it.buildDependencies)
+                kspTask.dependsOn(it)
+            }
         }.apply {
             configure {
                 kotlinCompilation.allKotlinSourceSets.forEach { sourceSet -> it.source(sourceSet.kotlin) }
@@ -163,7 +266,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
 
     override fun getCompilerPluginId() = KSP_PLUGIN_ID
     override fun getPluginArtifact(): SubpluginArtifact =
-            SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = KSP_ARTIFACT_NAME, version = javaClass.`package`.implementationVersion)
+            SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = artifactName, version = javaClass.`package`.implementationVersion)
 }
 
 // Copied from kotlin-gradle-plugin, because they are internal.

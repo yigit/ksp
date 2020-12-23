@@ -4,6 +4,8 @@ description = "Kotlin Symbol Processor"
 
 val kotlinBaseVersion: String by project
 val junitVersion: String by project
+val googleTruthVersion: String by project
+val agpBaseVersion: String by project
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
@@ -20,8 +22,12 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$kotlinBaseVersion")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinBaseVersion")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinBaseVersion")
+    compileOnly("com.android.tools.build:gradle-api:$agpBaseVersion")
     testImplementation(gradleApi())
+    testImplementation(project(":api"))
     testImplementation("junit:junit:$junitVersion")
+    testImplementation("com.google.truth:truth:$googleTruthVersion")
+    testImplementation(gradleTestKit())
 }
 
 tasks.named("validatePlugins").configure {
@@ -70,4 +76,28 @@ publishing {
             url = uri("${rootProject.buildDir}/repos/test")
         }
     }
+}
+
+val testPropsOutDir = project.layout.buildDirectory.dir("test-config")
+val writeTestPropsTask = tasks.register<WriteProperties>("prepareTestConfiguration") {
+    description = "Generates a properties file with the current environment for gradle integration tests"
+    this.setOutputFile(testPropsOutDir.map {
+        it.file("testprops.properties")
+    })
+    property("kspProjectRootDir", rootProject.projectDir.absolutePath)
+    property("testDataDir", project.projectDir.resolve("src/test-data").absolutePath)
+    property("processorClasspath", project.tasks["compileTestKotlin"].outputs.files.asPath)
+}
+
+java {
+    sourceSets {
+        test {
+            resources.srcDir(testPropsOutDir)
+        }
+    }
+}
+
+// this should not be necessary
+tasks.named("compileTestKotlin").configure {
+    dependsOn(writeTestPropsTask)
 }
