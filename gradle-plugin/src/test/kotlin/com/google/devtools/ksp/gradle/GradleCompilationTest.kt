@@ -28,6 +28,7 @@ class GradleCompilationTest {
     @Rule
     @JvmField
     val tmpDir = TemporaryFolder()
+
     @Rule
     @JvmField
     val testRule = KspIntegrationTestRule(tmpDir)
@@ -35,10 +36,13 @@ class GradleCompilationTest {
     @Test
     fun errorMessageFailsCompilation() {
         testRule.setupAppAsJvmApp()
-        testRule.addApplicationSource("Foo.kt", """
+        testRule.addApplicationSource(
+            "Foo.kt",
+            """
             class Foo {
             }
-        """.trimIndent())
+            """.trimIndent()
+        )
         class ErrorReporting : TestSymbolProcessor() {
             override fun process(resolver: Resolver) {
                 logger.error("processor failure")
@@ -54,16 +58,22 @@ class GradleCompilationTest {
     @Test
     fun applicationCanAccessGeneratedCode() {
         testRule.setupAppAsJvmApp()
-        testRule.addApplicationSource("Foo.kt", """
+        testRule.addApplicationSource(
+            "Foo.kt",
+            """
             class Foo {
                 val x = ToBeGenerated()
             }
-        """.trimIndent())
-        testRule.addApplicationSource("JavaSrc.java", """
+            """.trimIndent()
+        )
+        testRule.addApplicationSource(
+            "JavaSrc.java",
+            """
             class JavaSrc {
                 ToBeGenerated x;
             }
-        """.trimIndent())
+            """.trimIndent()
+        )
         class MyProcessor : TestSymbolProcessor() {
             override fun process(resolver: Resolver) {
                 codeGenerator.createNewFile(Dependencies.ALL_FILES, "", "Generated").use {

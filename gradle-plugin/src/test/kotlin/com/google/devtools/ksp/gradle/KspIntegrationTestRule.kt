@@ -29,10 +29,10 @@ class KspIntegrationTestRule(
     private val tmpFolder: TemporaryFolder
 ) : TestWatcher() {
     lateinit var rootDir: File
-    lateinit var processorModuleDir: File
-    lateinit var appModuleDir: File
+    lateinit var processorModule: TestModule
+    lateinit var appModule: TestModule
 
-    fun runner() = GradleRunner.create()
+    fun runner(): GradleRunner = GradleRunner.create()
         .withProjectDir(rootDir)
         .withDebug(true)
         .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
@@ -41,11 +41,11 @@ class KspIntegrationTestRule(
         val qName = checkNotNull(processor.java.name) {
             "Must provide a class that can be loaded by qualified name"
         }
-        processorModuleDir.servicesFile.writeText("$qName\n")
+        processorModule.servicesFile.writeText("$qName\n")
     }
 
     fun setupAppAsJvmApp() {
-        appModuleDir.resolve("build.gradle.kts").writeText(
+        appModule.buildFile.writeText(
             """
             plugins {
                 kotlin("jvm")
@@ -58,10 +58,10 @@ class KspIntegrationTestRule(
         )
     }
 
-    fun addApplicationSource(name:String, contents:String) {
+    fun addApplicationSource(name: String, contents: String) {
         val srcDir = when {
-            name.endsWith(".kt") -> appModuleDir.kotlinSourceDir
-            name.endsWith(".java") -> appModuleDir.javaSourceDir
+            name.endsWith(".kt") -> appModule.kotlinSourceDir
+            name.endsWith(".java") -> appModule.javaSourceDir
             else -> error("must provide java or kotlin file")
         }
         srcDir.resolve(name).writeText(contents)
@@ -71,12 +71,8 @@ class KspIntegrationTestRule(
         super.starting(description)
         val testConfig = TestConfig.read()
         rootDir = tmpFolder.newFolder()
-        processorModuleDir = rootDir.resolve("processor").also {
-            it.mkdirs()
-        }
-        appModuleDir = rootDir.resolve("app").also {
-            it.mkdirs()
-        }
+        processorModule = TestModule(rootDir.resolve("processor"))
+        appModule = TestModule(rootDir.resolve("app"))
         val rootSettingsFile = """
             includeBuild("${testConfig.kspProjectDir.absolutePath}")
             include("processor")
@@ -109,31 +105,12 @@ class KspIntegrationTestRule(
                 implementation(files("${testConfig.processorClasspath}"))
             }
         """.trimIndent()
-        processorModuleDir.resolve("build.gradle.kts").writeText(processorBuildFile)
+        processorModule.buildFile.writeText(processorBuildFile)
 
         rootDir.resolve("gradle.properties").writeText(
             "KSP_ARTIFACT_NAME=symbol-processing-for-tests"
         )
     }
-
-    override fun failed(e: Throwable?, description: Description?) {
-        super.failed(e, description)
-    }
-
-    private val File.kotlinSourceDir
-        get() = resolve("src/main/kotlin").also {
-            it.mkdirs()
-        }
-    private val File.javaSourceDir
-        get() = resolve("src/main/java").also {
-            it.mkdirs()
-        }
-    private val File.servicesDir
-        get() = resolve("src/main/resources/META-INF/services/").also {
-            it.mkdirs()
-        }
-    private val File.servicesFile
-        get() = servicesDir.resolve("com.google.devtools.ksp.processing.SymbolProcessor")
 
     data class TestConfig(
         val kspProjectDir: File,
@@ -150,6 +127,7 @@ class KspIntegrationTestRule(
         val kotlinBaseVersion by lazy {
             kspProjectProperties["kotlinBaseVersion"] as String
         }
+
         companion object {
             fun read(): TestConfig {
                 val props = Properties()
@@ -163,5 +141,31 @@ class KspIntegrationTestRule(
                 )
             }
         }
+    }
+
+    class TestModule(
+        val moduleRoot: File
+    ) {
+        init {
+            moduleRoot.mkdirs()
+        }
+
+        val kotlinSourceDir
+            get() = moduleRoot.resolve("src/main/kotlin").also {
+                it.mkdirs()
+            }
+        val javaSourceDir
+            get() = moduleRoot.resolve("src/main/java").also {
+                it.mkdirs()
+            }
+        val servicesDir
+            get() = moduleRoot.resolve("src/main/resources/META-INF/services/").also {
+                it.mkdirs()
+            }
+        val servicesFile
+            get() = servicesDir.resolve("com.google.devtools.ksp.processing.SymbolProcessor")
+
+        val buildFile
+            get() = moduleRoot.resolve("build.gradle.kts")
     }
 }
