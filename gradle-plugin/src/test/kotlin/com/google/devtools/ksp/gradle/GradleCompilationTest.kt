@@ -59,6 +59,11 @@ class GradleCompilationTest {
                 val x = ToBeGenerated()
             }
         """.trimIndent())
+        testRule.addApplicationSource("JavaSrc.java", """
+            class JavaSrc {
+                ToBeGenerated x;
+            }
+        """.trimIndent())
         class MyProcessor : TestSymbolProcessor() {
             override fun process(resolver: Resolver) {
                 codeGenerator.createNewFile(Dependencies.ALL_FILES, "", "Generated").use {
