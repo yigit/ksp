@@ -32,10 +32,13 @@ class KspIntegrationTestRule(
     lateinit var processorModule: TestModule
     lateinit var appModule: TestModule
 
-    fun runner(): GradleRunner = GradleRunner.create()
-        .withProjectDir(rootDir)
-        .withDebug(true)
-        .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
+    fun runner(): GradleRunner {
+        processorModule.writeBuildFile()
+        appModule.writeBuildFile()
+        return GradleRunner.create()
+            .withProjectDir(rootDir)
+            .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
+    }
 
     fun setProcessor(processor: KClass<out SymbolProcessor>) {
         val qName = checkNotNull(processor.java.name) {
@@ -45,17 +48,8 @@ class KspIntegrationTestRule(
     }
 
     fun setupAppAsJvmApp() {
-        appModule.buildFile.writeText(
-            """
-            plugins {
-                kotlin("jvm")
-                id("com.google.devtools.ksp")
-            }
-            dependencies {
-                ksp(project(":processor"))
-            }
-            """.trimIndent()
-        )
+        appModule.plugins.add(PluginDeclaration.kotlin("jvm"))
+        appModule.plugins.add(PluginDeclaration.id("com.google.devtools.ksp"))
     }
 
     fun addApplicationSource(name: String, contents: String) {
@@ -95,18 +89,14 @@ class KspIntegrationTestRule(
         """.trimIndent()
         rootDir.resolve("build.gradle.kts").writeText(rootBuildFile)
 
-        val processorBuildFile = """
-            plugins {
-                kotlin("jvm")
-            }
-            dependencies {
-                // notice that we use api instead of symbol-processing-api to match the module name
-                implementation("com.google.devtools.ksp:api")
-                implementation(files("${testConfig.processorClasspath}"))
-            }
-        """.trimIndent()
-        processorModule.buildFile.writeText(processorBuildFile)
-
+        processorModule.plugins.add(PluginDeclaration.kotlin("jvm"))
+        processorModule.dependencies.add(DependencyDeclaration.artifact("implementation", "com.google.devtools.ksp:api"))
+        processorModule.dependencies.add(
+            DependencyDeclaration.files(
+                "implementation",
+                testConfig.processorClasspath
+            )
+        )
         rootDir.resolve("gradle.properties").writeText(
             "KSP_ARTIFACT_NAME=symbol-processing-for-tests"
         )
@@ -144,8 +134,14 @@ class KspIntegrationTestRule(
     }
 
     class TestModule(
-        val moduleRoot: File
+        val moduleRoot: File,
+        plugins: List<PluginDeclaration> = emptyList(),
+        dependencies: List<DependencyDeclaration> = emptyList()
     ) {
+        val plugins = LinkedHashSet(plugins)
+        val dependencies = LinkedHashSet(dependencies)
+        val name = moduleRoot.name
+
         init {
             moduleRoot.mkdirs()
         }
@@ -167,5 +163,51 @@ class KspIntegrationTestRule(
 
         val buildFile
             get() = moduleRoot.resolve("build.gradle.kts")
+
+        fun writeBuildFile() {
+            val contents = buildString {
+                appendln("plugins {")
+                plugins.forEach { plugin ->
+                    appendln(plugin.toCode().prependIndent("    "))
+                }
+                appendln("}")
+                appendln("dependencies {")
+                dependencies.forEach { dependency ->
+                    appendln(dependency.toCode().prependIndent("    "))
+                }
+                appendln("}")
+            }
+            buildFile.writeText(contents)
+        }
+    }
+
+    data class DependencyDeclaration private constructor(
+        val configuration: String,
+        val dependency: String
+    ) {
+        fun toCode() = "${configuration}($dependency)"
+
+        companion object {
+            fun module(configuration: String, module: TestModule) =
+                DependencyDeclaration(configuration, "project(\":${module.name}\")")
+
+            fun artifact(configuration: String, coordinates: String) =
+                DependencyDeclaration(configuration, "\"$coordinates\"")
+
+            fun files(configuration: String, path: String) =
+                DependencyDeclaration(configuration, "files(\"$path\")")
+        }
+
+    }
+
+    data class PluginDeclaration private constructor(
+        val text: String
+    ) {
+        fun toCode() = text
+
+        companion object {
+            fun id(id: String) = PluginDeclaration("id(\"$id\")")
+            fun kotlin(id: String) = PluginDeclaration("kotlin(\"$id\")")
+        }
     }
 }

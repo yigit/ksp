@@ -17,6 +17,7 @@
 package com.google.devtools.ksp.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.devtools.ksp.gradle.KspIntegrationTestRule.DependencyDeclaration.Companion.module
 import com.google.devtools.ksp.gradle.processor.TestSymbolProcessor
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -36,6 +37,9 @@ class GradleCompilationTest {
     @Test
     fun errorMessageFailsCompilation() {
         testRule.setupAppAsJvmApp()
+        testRule.appModule.dependencies.add(
+            module(configuration = "ksp", testRule.processorModule)
+        )
         testRule.addApplicationSource(
             "Foo.kt",
             """
@@ -58,6 +62,9 @@ class GradleCompilationTest {
     @Test
     fun applicationCanAccessGeneratedCode() {
         testRule.setupAppAsJvmApp()
+        testRule.appModule.dependencies.add(
+            module(configuration = "ksp", testRule.processorModule)
+        )
         testRule.addApplicationSource(
             "Foo.kt",
             """
