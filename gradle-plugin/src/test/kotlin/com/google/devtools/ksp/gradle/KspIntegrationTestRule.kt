@@ -61,6 +61,15 @@ class KspIntegrationTestRule(
         srcDir.resolve(name).writeText(contents)
     }
 
+    fun addApplicationTestSource(name: String, contents: String) {
+        val srcDir = when {
+            name.endsWith(".kt") -> appModule.kotlinTestSourceDir
+            name.endsWith(".java") -> appModule.javaTestSourceDir
+            else -> error("must provide java or kotlin file")
+        }
+        srcDir.resolve(name).writeText(contents)
+    }
+
     override fun starting(description: Description) {
         super.starting(description)
         val testConfig = TestConfig.read()
@@ -152,6 +161,15 @@ class KspIntegrationTestRule(
             }
         val javaSourceDir
             get() = moduleRoot.resolve("src/main/java").also {
+                it.mkdirs()
+            }
+
+        val kotlinTestSourceDir
+            get() = moduleRoot.resolve("src/test/kotlin").also {
+                it.mkdirs()
+            }
+        val javaTestSourceDir
+            get() = moduleRoot.resolve("src/test/java").also {
                 it.mkdirs()
             }
         val servicesDir
