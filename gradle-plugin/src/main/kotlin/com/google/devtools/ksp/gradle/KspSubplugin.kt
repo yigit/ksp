@@ -17,7 +17,12 @@
 
 package com.google.devtools.ksp.gradle
 
+import com.android.build.api.dsl.AndroidSourceSet
+import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.extension.AndroidComponentsExtension
 import com.google.devtools.ksp.gradle.model.builder.KspModelBuilder
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
@@ -94,6 +99,15 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
             val configName = kspConfigurationName
             return target.project.configurations.findByName(configName)
         }
+    @OptIn(ExperimentalStdlibApi::class)
+    private val AndroidSourceSet.kspConfigurationName: String
+        get() {
+            return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
+                KSP_MAIN_CONFIGURATION_NAME
+            } else {
+                "$KSP_MAIN_CONFIGURATION_NAME${name.capitalize(Locale.US)}"
+            }
+        }
     override fun apply(project: Project) {
         project.extensions.create("ksp", KspExtension::class.java)
         artifactName = if (project.hasProperty("KSP_ARTIFACT_NAME")) {
@@ -102,23 +116,52 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
             DEFAULT_KSP_ARTIFACT_NAME
         }
         project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-            // kotlin extension has the target that we need to look for
+            // kotlin extension has the compilation target that we need to look for to create configurations
             decorateKotlinExtension(project)
+        }
+        project.pluginManager.withPlugin("com.android.application") {
+            // for android apps, we need a configuration per source set
+            decorateAndroidExtension(project)
+        }
+        project.pluginManager.withPlugin("com.android.library") {
+            // for android libraries, we need a configuration per source set
+            decorateAndroidExtension(project)
         }
         registry.register(KspModelBuilder())
     }
 
     private fun decorateKotlinExtension(project:Project) {
         project.extensions.configure(KotlinSingleTargetExtension::class.java) { kotlinExtension ->
-            val mainConfiguration = project.configurations.maybeCreate(KSP_MAIN_CONFIGURATION_NAME)
-            kotlinExtension.target.compilations.forEach { compilation ->
-                val kspConfigurationName = compilation.kspConfigurationName
-                if (kspConfigurationName != KSP_MAIN_CONFIGURATION_NAME) {
-                    val existing = project.configurations.findByName(kspConfigurationName)
-                    if (existing == null) {
-                        project.configurations.create(kspConfigurationName) {
-                            it.extendsFrom(mainConfiguration)
-                        }
+            kotlinExtension.target.compilations.createKspConfigurations(project) { kotlinCompilation ->
+                kotlinCompilation.kspConfigurationName
+            }
+        }
+    }
+
+    private fun decorateAndroidExtension(project:Project) {
+        @Suppress("UnstableApiUsage")
+        project.extensions.configure(CommonExtension::class.java) {
+            it.sourceSets.createKspConfigurations(project) { androidSourceSet ->
+                androidSourceSet.kspConfigurationName
+            }
+        }
+    }
+
+    /**
+     * Creates a KSP configuration for each element in the object container.
+     */
+    private fun<T> NamedDomainObjectContainer<T>.createKspConfigurations(
+        project: Project,
+        getKspConfigurationName : (T)-> String
+    ) {
+        val mainConfiguration = project.configurations.maybeCreate(KSP_MAIN_CONFIGURATION_NAME)
+        all {
+            val kspConfigurationName = getKspConfigurationName(it)
+            if (kspConfigurationName != KSP_MAIN_CONFIGURATION_NAME) {
+                val existing = project.configurations.findByName(kspConfigurationName)
+                if (existing == null) {
+                    project.configurations.create(kspConfigurationName) {
+                        it.extendsFrom(mainConfiguration)
                     }
                 }
             }

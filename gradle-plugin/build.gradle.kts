@@ -5,6 +5,7 @@ description = "Kotlin Symbol Processor"
 val kotlinBaseVersion: String by project
 val junitVersion: String by project
 val googleTruthVersion: String by project
+val agpBaseVersion: String by project
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
@@ -21,6 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$kotlinBaseVersion")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinBaseVersion")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinBaseVersion")
+    compileOnly("com.android.tools.build:gradle-api:$agpBaseVersion")
     testImplementation(gradleApi())
     testImplementation(project(":api"))
     testImplementation("junit:junit:$junitVersion")

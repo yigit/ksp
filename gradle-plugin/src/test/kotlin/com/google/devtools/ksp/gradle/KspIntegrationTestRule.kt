@@ -52,6 +52,29 @@ class KspIntegrationTestRule(
         appModule.plugins.add(PluginDeclaration.id("com.google.devtools.ksp"))
     }
 
+    fun setupAppAsAndroidApp() {
+        appModule.plugins.add(PluginDeclaration.id("com.android.application"))
+        appModule.plugins.add(PluginDeclaration.kotlin("android"))
+        appModule.plugins.add(PluginDeclaration.kotlin("kapt"))
+        appModule.plugins.add(PluginDeclaration.id("com.google.devtools.ksp"))
+        appModule.buildFileAdditions.add("""
+            android {
+                compileSdkVersion="android-29"
+            }
+        """.trimIndent())
+        appModule.moduleRoot.resolve("src/main/AndroidManifest.xml")
+            .also {
+                it.parentFile.mkdirs()
+            }.writeText(
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="com.example.kspandroidtestapp">
+            </manifest>
+            """.trimIndent()
+        )
+    }
+
     fun addApplicationSource(name: String, contents: String) {
         val srcDir = when {
             name.endsWith(".kt") -> appModule.kotlinSourceDir
@@ -80,19 +103,29 @@ class KspIntegrationTestRule(
             includeBuild("${testConfig.kspProjectDir.absolutePath}")
             include("processor")
             include("app")
+            pluginManagement {
+                repositories {
+                    gradlePluginPortal()
+                    google()
+                }
+            }
         """.trimIndent()
         rootDir.resolve("settings.gradle.kts").writeText(rootSettingsFile)
 
         val rootBuildFile = """
             plugins {
                 kotlin("jvm") version "${testConfig.kotlinBaseVersion}" apply false
+                kotlin("android") version "${testConfig.kotlinBaseVersion}" apply false
+                id("com.android.application") version "${testConfig.androidBaseVersion}" apply false
             }
             repositories {
                 mavenCentral()
+                google()
             }
             subprojects {
                 repositories {
                     mavenCentral()
+                    google()
                 }
             }
         """.trimIndent()
@@ -127,6 +160,10 @@ class KspIntegrationTestRule(
             kspProjectProperties["kotlinBaseVersion"] as String
         }
 
+        val androidBaseVersion by lazy {
+            kspProjectProperties["agpBaseVersion"] as String
+        }
+
         companion object {
             fun read(): TestConfig {
                 val props = Properties()
@@ -149,6 +186,7 @@ class KspIntegrationTestRule(
     ) {
         val plugins = LinkedHashSet(plugins)
         val dependencies = LinkedHashSet(dependencies)
+        val buildFileAdditions = LinkedHashSet<String>()
         val name = moduleRoot.name
 
         init {
@@ -194,6 +232,9 @@ class KspIntegrationTestRule(
                     appendln(dependency.toCode().prependIndent("    "))
                 }
                 appendln("}")
+                buildFileAdditions.forEach {
+                    appendln(it)
+                }
             }
             buildFile.writeText(contents)
         }

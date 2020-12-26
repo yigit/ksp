@@ -36,7 +36,7 @@ class SourceSetConfigurationsTest {
     val testRule = KspIntegrationTestRule(tmpDir)
 
     @Test
-    fun testProcessorRunsForTestsOnly() {
+    fun configurationsForJvmApp() {
         testRule.setupAppAsJvmApp()
         testRule.addApplicationSource("Foo.kt", "class Foo")
         val result = testRule.runner()
@@ -44,6 +44,27 @@ class SourceSetConfigurationsTest {
             .build()
 
         assertThat(result.output.lines()).containsAtLeast("ksp", "kspTest")
+    }
+
+    @Test
+    fun configurationsForAndroidApp() {
+        testRule.setupAppAsAndroidApp()
+        testRule.addApplicationSource("Foo.kt", "class Foo")
+        val result = testRule.runner()
+            .withArguments(":app:dependencies")
+            .build()
+
+        assertThat(result.output.lines()).containsAtLeast(
+            "ksp",
+            "kspAndroidTest",
+            "kspAndroidTestDebug",
+            "kspAndroidTestRelease",
+            "kspDebug",
+            "kspRelease",
+            "kspTest",
+            "kspTestDebug",
+            "kspTestRelease"
+        )
     }
 
     @Test
