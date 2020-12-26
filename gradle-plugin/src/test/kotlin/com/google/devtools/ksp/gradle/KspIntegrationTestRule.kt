@@ -37,6 +37,7 @@ class KspIntegrationTestRule(
         appModule.writeBuildFile()
         return GradleRunner.create()
             .withProjectDir(rootDir)
+            .withDebug(true)
             .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
     }
 
@@ -55,7 +56,6 @@ class KspIntegrationTestRule(
     fun setupAppAsAndroidApp() {
         appModule.plugins.add(PluginDeclaration.id("com.android.application"))
         appModule.plugins.add(PluginDeclaration.kotlin("android"))
-        appModule.plugins.add(PluginDeclaration.kotlin("kapt"))
         appModule.plugins.add(PluginDeclaration.id("com.google.devtools.ksp"))
         appModule.buildFileAdditions.add("""
             android {

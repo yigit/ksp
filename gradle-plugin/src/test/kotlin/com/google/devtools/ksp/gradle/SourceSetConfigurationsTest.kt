@@ -68,8 +68,22 @@ class SourceSetConfigurationsTest {
     }
 
     @Test
-    fun kspForTests() {
-        testRule.setupAppAsJvmApp()
+    fun kspForTests_jvm() {
+        kspForTests(androidApp = false)
+    }
+
+    @Test
+    fun kspForTests_android() {
+        kspForTests(androidApp = true)
+    }
+
+    private fun kspForTests(androidApp:Boolean) {
+        if (androidApp) {
+            testRule.setupAppAsAndroidApp()
+        } else {
+            testRule.setupAppAsJvmApp()
+        }
+
         testRule.addApplicationSource("App.kt", """
             @Suppress("app")
             class InApp {
@@ -102,6 +116,8 @@ class SourceSetConfigurationsTest {
         testRule.appModule.dependencies.add(
             module("kspTest", testRule.processorModule)
         )
-        testRule.runner().withArguments(":app:test").build()
+        // adding processor:assemble avoids some configuration problem in composite build
+        // without that, kotlin seems to resolve some java configurations (symbol-processing-api:api) too early.
+        testRule.runner().withArguments(":app:test", "--stacktrace").build()
     }
 }
