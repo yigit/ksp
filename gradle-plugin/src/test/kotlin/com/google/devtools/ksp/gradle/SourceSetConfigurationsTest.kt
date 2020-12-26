@@ -69,19 +69,30 @@ class SourceSetConfigurationsTest {
 
     @Test
     fun kspForTests_jvm() {
-        kspForTests(androidApp = false)
+        kspForTests(androidApp = false, useAndroidTest = false)
     }
 
     @Test
-    fun kspForTests_android() {
-        kspForTests(androidApp = true)
+    fun kspForTests_android_androidTest() {
+        kspForTests(androidApp = true, useAndroidTest = true)
     }
 
-    private fun kspForTests(androidApp:Boolean) {
+    @Test
+    fun kspForTests_android_junit() {
+        kspForTests(androidApp = true, useAndroidTest = false)
+    }
+
+    private fun kspForTests(androidApp:Boolean, useAndroidTest: Boolean) {
+
         if (androidApp) {
             testRule.setupAppAsAndroidApp()
         } else {
             testRule.setupAppAsJvmApp()
+        }
+        if (useAndroidTest) {
+            check(androidApp) {
+                "cannot set use android test w/o android app"
+            }
         }
 
         testRule.addApplicationSource("App.kt", """
@@ -89,12 +100,18 @@ class SourceSetConfigurationsTest {
             class InApp {
             }
         """.trimIndent())
-        testRule.addApplicationTestSource("InTest.kt", """
-            @Suppress("test")
-            class InTest {
-                val impl = InTest_Impl()
-            }
-        """.trimIndent())
+        val testSource = """
+                @Suppress("test")
+                class InTest {
+                    val impl = InTest_Impl()
+                }
+                """.trimIndent()
+        if (useAndroidTest) {
+            testRule.addAndroidTestSource("InTest.kt", testSource)
+        } else {
+            testRule.addApplicationTestSource("InTest.kt", testSource)
+        }
+
         class Processor : TestSymbolProcessor() {
             override fun process(resolver: Resolver) {
                 resolver.getSymbolsWithAnnotation(Suppress::class.qualifiedName!!)
@@ -113,9 +130,17 @@ class SourceSetConfigurationsTest {
             }
         }
         testRule.setProcessor(Processor::class)
-        testRule.appModule.dependencies.add(
-            module("kspTest", testRule.processorModule)
-        )
-        testRule.runner().withArguments(":app:test", "--stacktrace").build()
+        if (useAndroidTest) {
+            testRule.appModule.dependencies.add(
+                module("kspAndroidTest", testRule.processorModule)
+            )
+            testRule.runner().withArguments(":processor:assemble", ":app:assembleAndroidTest", "--stacktrace").build()
+        } else {
+            testRule.appModule.dependencies.add(
+                module("kspTest", testRule.processorModule)
+            )
+            testRule.runner().withArguments(":app:test", "--stacktrace").build()
+        }
+
     }
 }

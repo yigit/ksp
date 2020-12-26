@@ -37,7 +37,6 @@ class KspIntegrationTestRule(
         appModule.writeBuildFile()
         return GradleRunner.create()
             .withProjectDir(rootDir)
-            .withDebug(true)
             .withArguments("-Dkotlin.compiler.execution.strategy=\"in-process\"")
     }
 
@@ -88,6 +87,15 @@ class KspIntegrationTestRule(
         val srcDir = when {
             name.endsWith(".kt") -> appModule.kotlinTestSourceDir
             name.endsWith(".java") -> appModule.javaTestSourceDir
+            else -> error("must provide java or kotlin file")
+        }
+        srcDir.resolve(name).writeText(contents)
+    }
+
+    fun addAndroidTestSource(name: String, contents: String) {
+        val srcDir = when {
+            name.endsWith(".kt") -> appModule.kotlinAndroidTestSourceDir
+            name.endsWith(".java") -> appModule.javaAndroidTestSourceDir
             else -> error("must provide java or kotlin file")
         }
         srcDir.resolve(name).writeText(contents)
@@ -210,6 +218,16 @@ class KspIntegrationTestRule(
             get() = moduleRoot.resolve("src/test/java").also {
                 it.mkdirs()
             }
+
+        val kotlinAndroidTestSourceDir
+            get() = moduleRoot.resolve("src/androidTest/kotlin").also {
+                it.mkdirs()
+            }
+        val javaAndroidTestSourceDir
+            get() = moduleRoot.resolve("src/androidTest/java").also {
+                it.mkdirs()
+            }
+
         val servicesDir
             get() = moduleRoot.resolve("src/main/resources/META-INF/services/").also {
                 it.mkdirs()
