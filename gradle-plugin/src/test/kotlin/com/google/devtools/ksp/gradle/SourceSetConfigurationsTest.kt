@@ -116,8 +116,6 @@ class SourceSetConfigurationsTest {
         testRule.appModule.dependencies.add(
             module("kspTest", testRule.processorModule)
         )
-        // adding processor:assemble avoids some configuration problem in composite build
-        // without that, kotlin seems to resolve some java configurations (symbol-processing-api:api) too early.
         testRule.runner().withArguments(":app:test", "--stacktrace").build()
     }
 }

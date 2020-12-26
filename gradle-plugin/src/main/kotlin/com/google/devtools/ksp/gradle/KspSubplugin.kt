@@ -118,10 +118,6 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
             // kotlin extension has the compilation target that we need to look for to create configurations
             decorateKotlinExtension(project)
         }
-        project.pluginManager.withPlugin("org.jetbrains.kotlin.android") {
-            // kotlin extension has the compilation target that we need to look for to create configurations
-            decorateKotlinExtension(project)
-        }
         project.pluginManager.withPlugin("com.android.application") {
             // for android apps, we need a configuration per source set
             decorateAndroidExtension(project)
