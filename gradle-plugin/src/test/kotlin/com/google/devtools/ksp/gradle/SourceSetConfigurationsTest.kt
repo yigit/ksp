@@ -68,6 +68,44 @@ class SourceSetConfigurationsTest {
     }
 
     @Test
+    fun configurationsForAndroidApp_withBuildFlavorsMatchesKapt() {
+        testRule.setupAppAsAndroidApp()
+        testRule.appModule.buildFileAdditions.add("""
+            android {
+                flavorDimensions("version")
+                productFlavors {
+                    create("free") {
+                        dimension = "version"
+                        applicationId = "foo.bar"
+                    }
+                    create("paid") {
+                        dimension = "version"
+                        applicationId = "foo.baz"
+                    }
+                }
+            }
+        """.trimIndent())
+        testRule.appModule.plugins.add(KspIntegrationTestRule.PluginDeclaration.kotlin("kapt"))
+        testRule.addApplicationSource("Foo.kt", "class Foo")
+        val result = testRule.runner()
+            .withArguments(":app:dependencies")
+            .build()
+
+        val kaptConfigurations = result.output.lines().filter {
+            it.startsWith("kapt")
+        }
+        val kspConfigurations = result.output.lines().filter {
+            it.startsWith("ksp")
+        }
+        assertThat(kspConfigurations).containsExactlyElementsIn(
+            kaptConfigurations.map {
+                it.replace("kapt", "ksp")
+            }
+        )
+        assertThat(kspConfigurations).isNotEmpty()
+    }
+
+    @Test
     fun kspForTests_jvm() {
         kspForTests(androidApp = false, useAndroidTest = false)
     }
