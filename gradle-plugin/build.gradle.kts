@@ -87,6 +87,7 @@ val writeTestPropsTask = tasks.register<WriteProperties>("prepareTestConfigurati
     property("kspProjectRootDir", rootProject.projectDir.absolutePath)
     property("testDataDir", project.projectDir.resolve("src/test-data").absolutePath)
     property("processorClasspath", project.tasks["compileTestKotlin"].outputs.files.asPath)
+    property("mavenRepoDir", project.buildDir.resolve("mavenRepoForTests").absolutePath)
 }
 
 java {
@@ -100,4 +101,12 @@ java {
 // this should not be necessary
 tasks.named("compileTestKotlin").configure {
     dependsOn(writeTestPropsTask)
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion("1.4.20")
+        }
+    }
 }

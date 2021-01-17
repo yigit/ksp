@@ -32,7 +32,7 @@ class GradleCompilationTest {
 
     @Rule
     @JvmField
-    val testRule = KspIntegrationTestRule(tmpDir)
+    val testRule = KspIntegrationTestRule(tmpDir, useCompositeBuild = false)
 
     @Test
     fun errorMessageFailsCompilation() {
@@ -61,6 +61,7 @@ class GradleCompilationTest {
 
     @Test
     fun applicationCanAccessGeneratedCode() {
+        System.setProperty("kotlin.compiler.execution.strategy", "in-process")
         testRule.setupAppAsJvmApp()
         testRule.appModule.dependencies.add(
             module(configuration = "ksp", testRule.processorModule)
@@ -91,8 +92,11 @@ class GradleCompilationTest {
             }
         }
         testRule.setProcessor(MyProcessor::class)
+
         testRule.runner()
+            .withDebug(true)
             .withArguments("app:assemble")
+            .forwardOutput()
             .build()
     }
 }

@@ -26,11 +26,18 @@ import java.util.Properties
 import kotlin.reflect.KClass
 
 class KspIntegrationTestRule(
-    private val tmpFolder: TemporaryFolder
+    private val tmpFolder: TemporaryFolder,
+    private val useCompositeBuild: Boolean = false // maybe make this configurable too?
 ) : TestWatcher() {
     lateinit var rootDir: File
     lateinit var processorModule: TestModule
     lateinit var appModule: TestModule
+
+    val kspApiCoordinates = if (useCompositeBuild) {
+        "com.google.devtools.ksp:api"
+    } else {
+        "com.google.devtools.ksp:symbol-processing-api:${TestRepoInitializer.VERSION}"
+    }
 
     fun runner(): GradleRunner {
         processorModule.writeBuildFile()
@@ -107,17 +114,36 @@ class KspIntegrationTestRule(
         rootDir = tmpFolder.newFolder()
         processorModule = TestModule(rootDir.resolve("processor"))
         appModule = TestModule(rootDir.resolve("app"))
-        val rootSettingsFile = """
-            includeBuild("${testConfig.kspProjectDir.absolutePath}")
-            include("processor")
-            include("app")
-            pluginManagement {
-                repositories {
-                    gradlePluginPortal()
-                    google()
+        val localTestRepo = if (useCompositeBuild) {
+            ""
+        } else {
+            "maven(\"${TestRepoInitializer.getTestRepo(testConfig)}\")"
+        }
+        val rootSettingsFile = if(useCompositeBuild) {
+            """
+                includeBuild("${testConfig.kspProjectDir.absolutePath}")
+                include("processor")
+                include("app")
+                pluginManagement {
+                    repositories {
+                        gradlePluginPortal()
+                        google()
+                    }
                 }
-            }
-        """.trimIndent()
+            """.trimIndent()
+        } else {
+            """
+                include("processor")
+                include("app")
+                pluginManagement {
+                    repositories {
+                        $localTestRepo
+                        gradlePluginPortal()
+                        google()
+                    }
+                }
+            """.trimIndent()
+        }
         rootDir.resolve("settings.gradle.kts").writeText(rootSettingsFile)
 
         val rootBuildFile = """
@@ -125,37 +151,57 @@ class KspIntegrationTestRule(
                 kotlin("jvm") version "${testConfig.kotlinBaseVersion}" apply false
                 kotlin("android") version "${testConfig.kotlinBaseVersion}" apply false
                 id("com.android.application") version "${testConfig.androidBaseVersion}" apply false
+                id("com.google.devtools.ksp") version "${TestRepoInitializer.VERSION}" apply false
             }
             repositories {
+                $localTestRepo
                 mavenCentral()
                 google()
             }
+            configurations.all {
+                resolutionStrategy.eachDependency {
+                    if (requested.group == "org.jetbrains.kotlin") {
+                        useVersion("1.4.20")
+                    }
+                }
+            }
             subprojects {
                 repositories {
+                    $localTestRepo
                     mavenCentral()
                     google()
+                }
+                configurations.all {
+                    resolutionStrategy.eachDependency {
+                        if (requested.group == "org.jetbrains.kotlin") {
+                            useVersion("1.4.20")
+                        }
+                    }
                 }
             }
         """.trimIndent()
         rootDir.resolve("build.gradle.kts").writeText(rootBuildFile)
 
         processorModule.plugins.add(PluginDeclaration.kotlin("jvm"))
-        processorModule.dependencies.add(DependencyDeclaration.artifact("implementation", "com.google.devtools.ksp:api"))
+        processorModule.dependencies.add(DependencyDeclaration.artifact("implementation", kspApiCoordinates))
         processorModule.dependencies.add(
             DependencyDeclaration.files(
                 "implementation",
                 testConfig.processorClasspath
             )
         )
-        rootDir.resolve("gradle.properties").writeText(
-            "KSP_ARTIFACT_NAME=symbol-processing-for-tests"
-        )
+        if (useCompositeBuild) {
+            rootDir.resolve("gradle.properties").writeText(
+                "KSP_ARTIFACT_NAME=symbol-processing-for-tests"
+            )
+        }
     }
 
     data class TestConfig(
         val kspProjectDir: File,
         val testDataDir: File,
-        val processorClasspath: String
+        val processorClasspath: String,
+        val mavenRepoDir: File
     ) {
         private val kspProjectProperties by lazy {
             Properties().also { props ->
@@ -181,7 +227,8 @@ class KspIntegrationTestRule(
                 return TestConfig(
                     kspProjectDir = File(props.get("kspProjectRootDir") as String),
                     testDataDir = File(props.get("testDataDir") as String),
-                    processorClasspath = props.get("processorClasspath") as String
+                    processorClasspath = props.get("processorClasspath") as String,
+                    mavenRepoDir = File(props.get("mavenRepoDir") as String),
                 )
             }
         }
