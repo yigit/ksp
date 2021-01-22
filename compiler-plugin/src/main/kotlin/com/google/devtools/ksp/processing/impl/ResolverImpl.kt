@@ -145,6 +145,11 @@ class ResolverImpl(
             }
         }
         allKSFiles.map { it.accept(visitor, Unit) }
+        // for all nameToKSMap, get their types
+        nameToKSMap.values.forEach {
+            println("checking type for :${it.qualifiedName?.asString()}")
+            println("given type: " + it.asStarProjectedType().toString())
+        }
     }
 
     override fun getAllFiles(): List<KSFile> {
