@@ -17,8 +17,10 @@
 package com.google.devtools.ksp.gradle
 
 import com.google.common.truth.Truth.assertThat
-import com.google.devtools.ksp.gradle.KspIntegrationTestRule.DependencyDeclaration.Companion.module
+import com.google.devtools.ksp.gradle.testing.DependencyDeclaration.Companion.module
 import com.google.devtools.ksp.gradle.processor.TestSymbolProcessor
+import com.google.devtools.ksp.gradle.testing.KspIntegrationTestRule
+import com.google.devtools.ksp.gradle.testing.PluginDeclaration
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -38,7 +40,7 @@ class SourceSetConfigurationsTest {
     @Test
     fun configurationsForJvmApp() {
         testRule.setupAppAsJvmApp()
-        testRule.addApplicationSource("Foo.kt", "class Foo")
+        testRule.appModule.addSource("Foo.kt", "class Foo")
         val result = testRule.runner()
             .withArguments(":app:dependencies")
             .build()
@@ -49,7 +51,7 @@ class SourceSetConfigurationsTest {
     @Test
     fun configurationsForAndroidApp() {
         testRule.setupAppAsAndroidApp()
-        testRule.addApplicationSource("Foo.kt", "class Foo")
+        testRule.appModule.addSource("Foo.kt", "class Foo")
         val result = testRule.runner()
             .withArguments(":app:dependencies")
             .build()
@@ -85,8 +87,8 @@ class SourceSetConfigurationsTest {
                 }
             }
         """.trimIndent())
-        testRule.appModule.plugins.add(KspIntegrationTestRule.PluginDeclaration.kotlin("kapt"))
-        testRule.addApplicationSource("Foo.kt", "class Foo")
+        testRule.appModule.plugins.add(PluginDeclaration.kotlin("kapt", testRule.testConfig.kotlinBaseVersion))
+        testRule.appModule.addSource("Foo.kt", "class Foo")
         val result = testRule.runner()
             .withArguments(":app:dependencies")
             .build()
@@ -133,7 +135,7 @@ class SourceSetConfigurationsTest {
             }
         }
 
-        testRule.addApplicationSource("App.kt", """
+        testRule.appModule.addSource("App.kt", """
             @Suppress("app")
             class InApp {
             }
@@ -145,9 +147,9 @@ class SourceSetConfigurationsTest {
                 }
                 """.trimIndent()
         if (useAndroidTest) {
-            testRule.addAndroidTestSource("InTest.kt", testSource)
+            testRule.appModule.addAndroidTestSource("InTest.kt", testSource)
         } else {
-            testRule.addApplicationTestSource("InTest.kt", testSource)
+            testRule.appModule.addTestSource("InTest.kt", testSource)
         }
 
         class Processor : TestSymbolProcessor() {
@@ -167,7 +169,7 @@ class SourceSetConfigurationsTest {
                     }
             }
         }
-        testRule.setProcessor(Processor::class)
+        testRule.addProcessor(Processor::class)
         if (useAndroidTest) {
             testRule.appModule.dependencies.add(
                 module("kspAndroidTest", testRule.processorModule)

@@ -70,12 +70,6 @@ publishing {
             }
         }
     }
-    repositories {
-        maven {
-            name = "test"
-            url = uri("${rootProject.buildDir}/repos/test")
-        }
-    }
 }
 
 val testPropsOutDir = project.layout.buildDirectory.dir("test-config")
@@ -84,10 +78,10 @@ val writeTestPropsTask = tasks.register<WriteProperties>("prepareTestConfigurati
     this.setOutputFile(testPropsOutDir.map {
         it.file("testprops.properties")
     })
+    property("kspVersion", version)
+    property("mavenRepoDir", File(rootProject.buildDir, "repos/test").absolutePath)
     property("kspProjectRootDir", rootProject.projectDir.absolutePath)
-    property("testDataDir", project.projectDir.resolve("src/test-data").absolutePath)
     property("processorClasspath", project.tasks["compileTestKotlin"].outputs.files.asPath)
-    property("mavenRepoDir", project.buildDir.resolve("mavenRepoForTests").absolutePath)
 }
 
 java {
@@ -101,6 +95,12 @@ java {
 // this should not be necessary
 tasks.named("compileTestKotlin").configure {
     dependsOn(writeTestPropsTask)
+}
+
+tasks.named<Test>("test").configure {
+    dependsOn(":api:publishAllPublicationsToTestRepository")
+    dependsOn(":gradle-plugin:publishAllPublicationsToTestRepository")
+    dependsOn(":symbol-processing:publishAllPublicationsToTestRepository")
 }
 
 configurations.all {

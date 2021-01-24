@@ -36,6 +36,10 @@ subprojects {
             } else {
                 mavenLocal()
             }
+            maven {
+                name = "test"
+                url = uri("${rootProject.buildDir}/repos/test")
+            }
         }
         publishExtension.publications.whenObjectAdded {
             check(this is MavenPublication) {

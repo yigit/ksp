@@ -17,8 +17,9 @@
 package com.google.devtools.ksp.gradle
 
 import com.google.common.truth.Truth.assertThat
-import com.google.devtools.ksp.gradle.KspIntegrationTestRule.DependencyDeclaration.Companion.module
+import com.google.devtools.ksp.gradle.testing.DependencyDeclaration.Companion.module
 import com.google.devtools.ksp.gradle.processor.TestSymbolProcessor
+import com.google.devtools.ksp.gradle.testing.KspIntegrationTestRule
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import org.junit.Rule
@@ -32,7 +33,7 @@ class GradleCompilationTest {
 
     @Rule
     @JvmField
-    val testRule = KspIntegrationTestRule(tmpDir, useCompositeBuild = false)
+    val testRule = KspIntegrationTestRule(tmpDir)
 
     @Test
     fun errorMessageFailsCompilation() {
@@ -40,7 +41,7 @@ class GradleCompilationTest {
         testRule.appModule.dependencies.add(
             module(configuration = "ksp", testRule.processorModule)
         )
-        testRule.addApplicationSource(
+        testRule.appModule.addSource(
             "Foo.kt",
             """
             class Foo {
@@ -49,24 +50,23 @@ class GradleCompilationTest {
         )
         class ErrorReporting : TestSymbolProcessor() {
             override fun process(resolver: Resolver) {
-                logger.error("processor failure")
+                logger.error("my processor failure")
             }
         }
-        testRule.setProcessor(ErrorReporting::class)
+        testRule.addProcessor(ErrorReporting::class)
         val failure = testRule.runner()
             .withArguments("app:assemble")
             .buildAndFail()
-        assertThat(failure.output).contains("processor failure")
+        assertThat(failure.output).contains("my processor failure")
     }
 
     @Test
     fun applicationCanAccessGeneratedCode() {
-        System.setProperty("kotlin.compiler.execution.strategy", "in-process")
         testRule.setupAppAsJvmApp()
         testRule.appModule.dependencies.add(
             module(configuration = "ksp", testRule.processorModule)
         )
-        testRule.addApplicationSource(
+        testRule.appModule.addSource(
             "Foo.kt",
             """
             class Foo {
@@ -74,7 +74,7 @@ class GradleCompilationTest {
             }
             """.trimIndent()
         )
-        testRule.addApplicationSource(
+        testRule.appModule.addSource(
             "JavaSrc.java",
             """
             class JavaSrc {
@@ -91,7 +91,7 @@ class GradleCompilationTest {
                 }
             }
         }
-        testRule.setProcessor(MyProcessor::class)
+        testRule.addProcessor(MyProcessor::class)
 
         testRule.runner()
             .withDebug(true)
