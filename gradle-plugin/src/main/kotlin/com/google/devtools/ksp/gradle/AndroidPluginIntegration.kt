@@ -27,12 +27,14 @@ import java.util.*
  * This helper class handles communication with the android plugin.
  * It is isolated in a separate class to avoid adding dependency on the android plugin.
  * Instead, we add a compileOnly dependency to the Android Plugin, which means we can still function
- * without the Android plugin.
+ * without the Android plugin. The downside is that we need to ensure never to access Android
+ * plugin APIs directly without checking its existence (we have tests covering that case).
  */
 @Suppress("UnstableApiUsage") // some android APIs are unsable.
-class AndroidIntegration(
+class AndroidPluginIntegration(
     private val kspGradleSubplugin: KspGradleSubplugin
 ) {
+
     fun applyIfAndroidProject(project: Project) {
         project.pluginManager.withPlugin("com.android.application") {
             // for android apps, we need a configuration per source set
@@ -43,6 +45,7 @@ class AndroidIntegration(
             decorateAndroidExtension(project)
         }
     }
+
     @OptIn(ExperimentalStdlibApi::class)
     private val AndroidSourceSet.kspConfigurationName: String
         get() {

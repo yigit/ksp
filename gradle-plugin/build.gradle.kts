@@ -72,6 +72,10 @@ publishing {
     }
 }
 
+/**
+ * Create a properties file with that can be read from the gradle-plugin tests to setup test
+ * projects.
+ */
 val testPropsOutDir = project.layout.buildDirectory.dir("test-config")
 val writeTestPropsTask = tasks.register<WriteProperties>("prepareTestConfiguration") {
     description = "Generates a properties file with the current environment for gradle integration tests"
@@ -92,7 +96,6 @@ java {
     }
 }
 
-// this should not be necessary
 tasks.named("compileTestKotlin").configure {
     dependsOn(writeTestPropsTask)
 }
@@ -101,12 +104,4 @@ tasks.named<Test>("test").configure {
     dependsOn(":api:publishAllPublicationsToTestRepository")
     dependsOn(":gradle-plugin:publishAllPublicationsToTestRepository")
     dependsOn(":symbol-processing:publishAllPublicationsToTestRepository")
-}
-
-configurations.all {
-    resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin") {
-            useVersion("1.4.20")
-        }
-    }
 }

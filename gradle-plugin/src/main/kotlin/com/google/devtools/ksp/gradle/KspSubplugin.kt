@@ -54,8 +54,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
         KotlinCompilerPluginSupportPlugin {
     companion object {
         const val KSP_MAIN_CONFIGURATION_NAME = "ksp"
-        // gradle integration tests might pass a different artifact name
-        val KSP_ARTIFACT_NAME = "symbol-processing"
+        const val KSP_ARTIFACT_NAME = "symbol-processing"
         const val KSP_PLUGIN_ID = "com.google.devtools.ksp.symbol-processing"
 
         @JvmStatic
@@ -83,8 +82,8 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
                 File(project.project.buildDir, "kspCaches/$sourceSetName")
     }
 
-    val androidIntegration by lazy {
-        AndroidIntegration(this)
+    private val androidIntegration by lazy {
+        AndroidPluginIntegration(this)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -96,10 +95,9 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
                 "$KSP_MAIN_CONFIGURATION_NAME${name.capitalize(Locale.US)}"
             }
         }
-    private fun KotlinSourceSet.kspConfiguration(project: Project): Configuration? {
-        val configName = kspConfigurationName
 
-        return project.configurations.findByName(configName)
+    private fun KotlinSourceSet.kspConfiguration(project: Project): Configuration? {
+        return project.configurations.findByName(kspConfigurationName)
     }
 
     override fun apply(project: Project) {
@@ -204,9 +202,9 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
             kspTask.mapClasspath { kotlinCompileProvider.get().classpath }
             kspTask.options = options
             kspTask.outputs.dirs(kotlinOutputDir, javaOutputDir, classOutputDir, resourceOutputDir)
-            // depends on the processor; if the processor changes, it needs to be reprocessed.
             nonEmptyKspConfigurations.forEach {
                 kspTask.dependsOn(it.buildDependencies)
+                // depends on the processor; if the processor changes, it needs to be reprocessed.
                 kspTask.dependsOn(it)
             }
         }.apply {

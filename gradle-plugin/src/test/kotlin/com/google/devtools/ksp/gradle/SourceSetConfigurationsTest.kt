@@ -123,7 +123,6 @@ class SourceSetConfigurationsTest {
     }
 
     private fun kspForTests(androidApp:Boolean, useAndroidTest: Boolean) {
-
         if (androidApp) {
             testRule.setupAppAsAndroidApp()
         } else {
@@ -181,6 +180,5 @@ class SourceSetConfigurationsTest {
             )
             testRule.runner().withArguments(":app:test", "--stacktrace").build()
         }
-
     }
 }
