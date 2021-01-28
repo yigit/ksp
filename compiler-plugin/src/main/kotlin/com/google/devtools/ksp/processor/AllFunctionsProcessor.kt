@@ -18,6 +18,7 @@
 
 package com.google.devtools.ksp.processor
 
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
@@ -33,6 +34,7 @@ class AllFunctionsProcessor : AbstractTestProcessor() {
 
     override fun process(resolver: Resolver) {
         resolver.getAllFiles().map { it.accept(visitor, Unit) }
+        resolver.getClassDeclarationByName("JavaWithConstructorInLib")!!.accept(visitor, Unit)
     }
 
     inner class AllFunctionsVisitor : KSVisitorVoid() {

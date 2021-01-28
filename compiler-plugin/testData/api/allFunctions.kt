@@ -21,6 +21,8 @@
 // class: KotlinInterfaceWithProperty
 // <init>(): C
 // <init>(): JavaImplOfKotlinInterface
+// <init>(kotlin.Int): JavaWithConstructor
+// <init>(kotlin.Int): JavaWithConstructorInLib
 // a
 // aFromC
 // aFromC
@@ -33,6 +35,8 @@
 // class: Data
 // class: Foo
 // class: JavaImplOfKotlinInterface
+// class: JavaWithConstructor
+// class: JavaWithConstructorInLib
 // component1(): kotlin.String
 // contains(kotlin.Number): kotlin.Boolean
 // containsAll(kotlin.collections.Collection): kotlin.Boolean
@@ -42,8 +46,12 @@
 // equals(kotlin.Any): kotlin.Boolean
 // equals(kotlin.Any): kotlin.Boolean
 // equals(kotlin.Any): kotlin.Boolean
+// equals(kotlin.Any): kotlin.Boolean
+// equals(kotlin.Any): kotlin.Boolean
 // forEach(java.util.function.Consumer): kotlin.Unit
 // get(kotlin.Int): kotlin.Number
+// hashCode(): kotlin.Int
+// hashCode(): kotlin.Int
 // hashCode(): kotlin.Int
 // hashCode(): kotlin.Int
 // hashCode(): kotlin.Int
@@ -60,6 +68,8 @@
 // lastIndexOf(kotlin.Number): kotlin.Int
 // listIterator(): kotlin.collections.ListIterator
 // listIterator(kotlin.Int): kotlin.collections.ListIterator
+// method1(kotlin.Int): kotlin.Unit
+// method1(kotlin.Int): kotlin.Unit
 // parallelStream(): java.util.stream.Stream
 // size
 // spliterator(): java.util.Spliterator
@@ -70,9 +80,23 @@
 // toString(): kotlin.String
 // toString(): kotlin.String
 // toString(): kotlin.String
+// toString(): kotlin.String
+// toString(): kotlin.String
 // x
 // x
 // END
+// MODULE: lib
+// FILE: JavaWithConstructorInLib.java
+class JavaWithConstructorInLib {
+    JavaWithConstructorInLib(int constructorArg1) {
+    }
+    void method1(int arg1) {}
+}
+// FILE: KotlinInLib.kt
+class KotlinClassInLib(constructorArg1:Int) {
+    fun method1(arg1: Int) {}
+}
+// MODULE: mainModule(lib)
 // FILE: a.kt
 abstract class Foo : C(), List<out Number> {
     override fun javaListFun(): List<Int> {
@@ -126,4 +150,10 @@ class JavaImplOfKotlinInterface implements KotlinInterfaceWithProperty {
     }
     public void setX(int value) {
     }
+}
+// FILE: JavaWithConstructor.java
+class JavaWithConstructor {
+    JavaWithConstructor(int constructorArg1) {
+    }
+    void method1(int arg1) {}
 }
