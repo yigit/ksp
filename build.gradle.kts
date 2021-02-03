@@ -4,6 +4,7 @@ import java.time.format.DateTimeFormatter
 plugins {
     kotlin("jvm") version "1.4.20" apply false
     id("com.diffplug.spotless") version "5.9.0"
+    id("org.jlleitschuh.gradle.ktlint-idea") version "9.4.1"
 }
 
 if (!extra.has("kspVersion")) {
@@ -11,7 +12,10 @@ if (!extra.has("kspVersion")) {
     val today = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE)
     extra.set("kspVersion", "$kotlinBaseVersion-dev-experimental-$today")
 }
-
+repositories {
+    // necessary to run ktlintApplyToIdea task
+    mavenCentral()
+}
 subprojects {
     group = "com.google.devtools.ksp"
     version = rootProject.extra.get("kspVersion") as String
@@ -26,7 +30,7 @@ subprojects {
     extensions.getByType<com.diffplug.gradle.spotless.SpotlessExtension>().apply {
         kotlin {
             target("src/**/*.kt")
-            ktlint().userData(
+            ktlint("0.40.0").userData(
                 mapOf(
                     "max_line_length" to "120",
                     "disabled_rules" to "no-wildcard-imports",
@@ -84,5 +88,4 @@ subprojects {
             }
         }
     }
-
 }
