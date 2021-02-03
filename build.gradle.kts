@@ -3,6 +3,7 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     kotlin("jvm") version "1.4.20" apply false
+    id("com.diffplug.spotless") version "5.9.0"
 }
 
 if (!extra.has("kspVersion")) {
@@ -18,6 +19,22 @@ subprojects {
         mavenCentral()
         google()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
+    }
+    // spotless setup
+    pluginManager.apply("com.diffplug.spotless")
+
+    extensions.getByType<com.diffplug.gradle.spotless.SpotlessExtension>().apply {
+        kotlin {
+            target("src/**/*.kt")
+            ktlint().userData(
+                mapOf(
+                    "max_line_length" to "120",
+                    "disabled_rules" to "no-wildcard-imports",
+                    "insert_final_newline" to "true"
+                )
+            )
+            licenseHeaderFile(project.rootProject.file("scripts/copyright.txt"))
+        }
     }
     tasks.withType<Jar>().configureEach {
         manifest.attributes.apply {
@@ -67,4 +84,5 @@ subprojects {
             }
         }
     }
+
 }
