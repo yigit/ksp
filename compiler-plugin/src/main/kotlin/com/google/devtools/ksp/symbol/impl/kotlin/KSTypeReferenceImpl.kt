@@ -20,16 +20,27 @@ package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.ExceptionMessage
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSReferenceElement
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
 import com.google.devtools.ksp.symbol.impl.toLocation
-import org.jetbrains.kotlin.psi.*
-import java.lang.IllegalStateException
+import org.jetbrains.kotlin.psi.KtDynamicType
+import org.jetbrains.kotlin.psi.KtFunctionType
+import org.jetbrains.kotlin.psi.KtNullableType
+import org.jetbrains.kotlin.psi.KtTypeReference
+import org.jetbrains.kotlin.psi.KtUserType
 
 class KSTypeReferenceImpl private constructor(val ktTypeReference: KtTypeReference) : KSTypeReference {
     companion object : KSObjectCache<KtTypeReference, KSTypeReferenceImpl>() {
-        fun getCached(ktTypeReference: KtTypeReference) = cache.getOrPut(ktTypeReference) { KSTypeReferenceImpl(ktTypeReference) }
+        fun getCached(ktTypeReference: KtTypeReference) =
+            cache.getOrPut(ktTypeReference) { KSTypeReferenceImpl(ktTypeReference) }
     }
 
     override val origin = Origin.KOTLIN

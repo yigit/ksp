@@ -42,7 +42,7 @@ class CodeGeneratorImpl(
     val sourceToOutputs: MutableMap<File, MutableSet<File>> = mutableMapOf()
 
     internal fun closeFiles() {
-        fileMap.keys.forEach{
+        fileMap.keys.forEach {
             fileOutputStreamMap[it]!!.close()
         }
     }
@@ -59,7 +59,12 @@ class CodeGeneratorImpl(
         return "$typeRoot$separator$packageDirs$fileName${extension}"
     }
 
-    override fun createNewFile(dependencies: Dependencies, packageName: String, fileName: String, extensionName: String): OutputStream {
+    override fun createNewFile(
+        dependencies: Dependencies,
+        packageName: String,
+        fileName: String,
+        extensionName: String
+    ): OutputStream {
         val path = pathOf(packageName, fileName, extensionName)
         if (fileOutputStreamMap[path] == null) {
             if (fileMap[path] == null) {

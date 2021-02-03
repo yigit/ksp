@@ -18,10 +18,14 @@
 
 package com.google.devtools.ksp.processor
 
-import com.google.devtools.ksp.*
+import com.google.devtools.ksp.isInternal
+import com.google.devtools.ksp.isLocal
+import com.google.devtools.ksp.isOpen
+import com.google.devtools.ksp.isPrivate
+import com.google.devtools.ksp.isProtected
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
@@ -42,14 +46,23 @@ class DeclarationCollector : KSTopDownVisitor<MutableCollection<String>, Unit>()
     override fun defaultHandler(node: KSNode, data: MutableCollection<String>) {
     }
 
-    private fun KSDeclaration.toSignature() : String {
+    private fun KSDeclaration.toSignature(): String {
         qualifiedName?.let {
             return it.asString()
         }
         val parentSignature = parentDeclaration?.toSignature() ?: ""
         return "$parentSignature / ${simpleName.asString()}"
     }
+
     override fun visitDeclaration(declaration: KSDeclaration, data: MutableCollection<String>) {
-        data.add("${declaration.toSignature()}: ${declaration.isInternal()}: ${declaration.isLocal()}: ${declaration.isPrivate()}: ${declaration.isProtected()}: ${declaration.isPublic()}: ${declaration.isOpen()}")
+        data.add(
+            "${declaration.toSignature()}: " +
+                "${declaration.isInternal()}: " +
+                "${declaration.isLocal()}: " +
+                "${declaration.isPrivate()}: " +
+                "${declaration.isProtected()}: " +
+                "${declaration.isPublic()}: " +
+                "${declaration.isOpen()}"
+        )
     }
 }

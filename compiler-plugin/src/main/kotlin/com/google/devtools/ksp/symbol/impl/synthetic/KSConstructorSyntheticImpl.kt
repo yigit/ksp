@@ -19,14 +19,32 @@
 package com.google.devtools.ksp.symbol.impl.synthetic
 
 import com.google.devtools.ksp.isPublic
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.FunctionKind
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 
-class KSConstructorSyntheticImpl(val ksClassDeclaration: KSClassDeclaration) : KSFunctionDeclaration, KSDeclaration by ksClassDeclaration {
+class KSConstructorSyntheticImpl(val ksClassDeclaration: KSClassDeclaration) : KSFunctionDeclaration,
+    KSDeclaration by ksClassDeclaration {
     companion object : KSObjectCache<KSClassDeclaration, KSConstructorSyntheticImpl>() {
         fun getCached(ksClassDeclaration: KSClassDeclaration) =
-            KSConstructorSyntheticImpl.cache.getOrPut(ksClassDeclaration) { KSConstructorSyntheticImpl(ksClassDeclaration) }
+            KSConstructorSyntheticImpl.cache.getOrPut(ksClassDeclaration) {
+                KSConstructorSyntheticImpl(
+                    ksClassDeclaration
+                )
+            }
     }
 
     override val isAbstract: Boolean = false

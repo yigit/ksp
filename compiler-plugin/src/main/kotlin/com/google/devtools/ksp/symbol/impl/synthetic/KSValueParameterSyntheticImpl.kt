@@ -1,7 +1,14 @@
 package com.google.devtools.ksp.symbol.impl.synthetic
 
 import com.google.devtools.ksp.ExceptionMessage
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSAnnotationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeReferenceDescriptorImpl
@@ -13,8 +20,10 @@ import org.jetbrains.kotlin.resolve.calls.components.isVararg
 class KSValueParameterSyntheticImpl(resolve: () -> ValueParameterDescriptor?) : KSValueParameter {
 
     companion object : KSObjectCache<() -> ValueParameterDescriptor?, KSValueParameterSyntheticImpl>() {
-        fun getCached(resolve: () -> ValueParameterDescriptor?) = KSValueParameterSyntheticImpl.cache.getOrPut(resolve) { KSValueParameterSyntheticImpl(resolve) }
+        fun getCached(resolve: () -> ValueParameterDescriptor?) =
+            KSValueParameterSyntheticImpl.cache.getOrPut(resolve) { KSValueParameterSyntheticImpl(resolve) }
     }
+
     private val descriptor by lazy {
         resolve() ?: throw IllegalStateException("Failed to resolve for synthetic value parameter, $ExceptionMessage")
     }

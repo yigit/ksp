@@ -19,7 +19,11 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
 open class TypeComparisonProcessor : AbstractTestProcessor() {
@@ -44,7 +48,8 @@ open class TypeComparisonProcessor : AbstractTestProcessor() {
             }
         }
 
-        val sortedTypes = types.filterNot { it.declaration.simpleName.asString() in ignoredNames }.sortedBy { it.toString() }
+        val sortedTypes =
+            types.filterNot { it.declaration.simpleName.asString() in ignoredNames }.sortedBy { it.toString() }
 
         for (i in sortedTypes) {
             for (j in sortedTypes) {
@@ -56,7 +61,6 @@ open class TypeComparisonProcessor : AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }
 
 class TypeCollectorNoAccessor : TypeCollector() {

@@ -1,11 +1,20 @@
 package com.google.devtools.ksp.symbol.impl.synthetic
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSReferenceElement
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 
 class KSTypeReferenceSyntheticImpl(val ksType: KSType) : KSTypeReference {
     companion object : KSObjectCache<KSType, KSTypeReferenceSyntheticImpl>() {
-        fun getCached(ksType: KSType) = KSTypeReferenceSyntheticImpl.cache.getOrPut(ksType) { KSTypeReferenceSyntheticImpl(ksType) }
+        fun getCached(ksType: KSType) =
+            KSTypeReferenceSyntheticImpl.cache.getOrPut(ksType) { KSTypeReferenceSyntheticImpl(ksType) }
     }
 
     override val annotations: List<KSAnnotation> = emptyList()

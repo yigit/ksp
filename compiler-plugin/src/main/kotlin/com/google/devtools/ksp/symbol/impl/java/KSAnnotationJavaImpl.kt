@@ -43,7 +43,10 @@ class KSAnnotationJavaImpl private constructor(val psi: PsiAnnotation) : KSAnnot
     }
 
     override val annotationType: KSTypeReference by lazy {
-        val psiClass = psi.nameReferenceElement!!.resolve() as? PsiClass ?: return@lazy KSTypeReferenceLiteJavaImpl.getCached(KSErrorType)
+        val psiClass =
+            psi.nameReferenceElement!!.resolve() as? PsiClass ?: return@lazy KSTypeReferenceLiteJavaImpl.getCached(
+                KSErrorType
+            )
         (psi.containingFile as? PsiJavaFile)?.let {
             ResolverImpl.instance.incrementalContext.recordLookup(it, psiClass.qualifiedName!!)
         }
@@ -84,15 +87,21 @@ class KSAnnotationJavaImpl private constructor(val psi: PsiAnnotation) : KSAnnot
         if (value is PsiAnnotation) {
             return getCached(value)
         }
-        val result = when(value) {
+        val result = when (value) {
             is PsiReference -> value.resolve()?.let { resolved ->
-                JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(value) ?: resolved
+                JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(value)
+                    ?: resolved
             }
-            else -> value?.let { JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(value) }
+            else -> value?.let {
+                JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(
+                    value
+                )
+            }
         }
-        return when(result) {
+        return when (result) {
             is PsiType -> {
-                ResolverImpl.instance.getClassDeclarationByName(result.canonicalText)?.asStarProjectedType() ?: KSErrorType
+                ResolverImpl.instance.getClassDeclarationByName(result.canonicalText)?.asStarProjectedType()
+                    ?: KSErrorType
             }
             is PsiLiteralValue -> {
                 result.value
@@ -105,11 +114,14 @@ class KSAnnotationJavaImpl private constructor(val psi: PsiAnnotation) : KSAnnot
                     containingClass.qualifiedName?.let {
                         ResolverImpl.instance.getClassDeclarationByName(it)
                     }?.declarations?.find {
-                        it is KSClassDeclaration && it.classKind == ClassKind.ENUM_ENTRY && it.simpleName.asString() == result.name
-                    }?.let { (it as KSClassDeclaration).asStarProjectedType() }
-                        ?.let {
-                            return it
-                        }
+                        it is KSClassDeclaration &&
+                            it.classKind == ClassKind.ENUM_ENTRY &&
+                            it.simpleName.asString() == result.name
+                    }?.let {
+                        (it as KSClassDeclaration).asStarProjectedType()
+                    }?.let {
+                        return it
+                    }
                 } else {
                     null
                 }

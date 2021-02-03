@@ -19,16 +19,28 @@
 package com.google.devtools.ksp.symbol.impl.java
 
 import com.google.devtools.ksp.ExceptionMessage
-import com.intellij.psi.*
-import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSReferenceElement
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSClassifierReferenceDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSErrorType
 import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
 import com.google.devtools.ksp.symbol.impl.toLocation
+import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiPrimitiveType
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiWildcardType
+import com.intellij.psi.impl.source.PsiClassReferenceType
 import org.jetbrains.kotlin.descriptors.NotFoundClasses
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.Variance
@@ -84,18 +96,23 @@ class KSTypeReferenceJavaImpl private constructor(val psi: PsiType) : KSTypeRefe
                     )
                 } else {
                     KSClassifierReferenceDescriptorImpl.getCached(
-                        ResolverImpl.instance.module.builtIns.getPrimitiveArrayKotlinTypeByPrimitiveKotlinType(componentType)!!
+                        ResolverImpl.instance.module.builtIns.getPrimitiveArrayKotlinTypeByPrimitiveKotlinType(
+                            componentType
+                        )!!
                     )
                 }
             }
-            null -> KSClassifierReferenceDescriptorImpl.getCached((ResolverImpl.instance.builtIns.anyType as KSTypeImpl).kotlinType.makeNullable())
+            null -> KSClassifierReferenceDescriptorImpl.getCached(
+                (ResolverImpl.instance.builtIns.anyType as KSTypeImpl).kotlinType.makeNullable()
+            )
             else -> throw IllegalStateException("Unexpected psi type for ${type.javaClass}, $ExceptionMessage")
         }
     }
 
     override fun resolve(): KSType {
         val resolvedType = ResolverImpl.instance.resolveUserType(this)
-        return if ((resolvedType.declaration as? KSClassDeclarationDescriptorImpl)?.descriptor is NotFoundClasses.MockClassDescriptor) {
+        val descriptor = (resolvedType.declaration as? KSClassDeclarationDescriptorImpl)?.descriptor
+        return if (descriptor is NotFoundClasses.MockClassDescriptor) {
             KSErrorType
         } else resolvedType
     }

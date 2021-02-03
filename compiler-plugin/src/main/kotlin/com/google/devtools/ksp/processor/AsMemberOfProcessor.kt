@@ -6,8 +6,8 @@ import com.google.devtools.ksp.isConstructor
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSFunction
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeParameter
@@ -16,6 +16,7 @@ import com.google.devtools.ksp.symbol.Nullability
 @Suppress("unused") // used by generated tests
 class AsMemberOfProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
+
     // keep a list of all signatures we generate and ensure equals work as expected
     private val functionsBySignature = mutableMapOf<String, MutableSet<KSFunction>>()
     override fun toResult(): List<String> {
@@ -61,7 +62,12 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
 
         // TODO we should eventually support this, probably as different asReceiverOf kind of API
         val fileLevelExtensionFunction = resolver.getDeclaration<KSFunctionDeclaration>("fileLevelExtensionFunction")
-        results.add("fileLevelExtensionFunction: " + resolver.asMemberOfSignature(fileLevelExtensionFunction, listOfStrings))
+        results.add(
+            "fileLevelExtensionFunction: " + resolver.asMemberOfSignature(
+                fileLevelExtensionFunction,
+                listOfStrings
+            )
+        )
 
         val fileLevelProperty = resolver.getDeclaration<KSPropertyDeclaration>("fileLevelProperty")
         results.add("fileLevelProperty: " + resolver.asMemberOfSignature(fileLevelProperty, listOfStrings))
@@ -92,9 +98,6 @@ class AsMemberOfProcessor : AbstractTestProcessor() {
                 }
             }
         }
-
-
-
     }
 
     private inline fun <reified T : KSDeclaration> Resolver.getDeclaration(name: String): T {

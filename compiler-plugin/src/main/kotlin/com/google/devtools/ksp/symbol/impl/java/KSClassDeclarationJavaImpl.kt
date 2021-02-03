@@ -19,28 +19,40 @@
 package com.google.devtools.ksp.symbol.impl.java
 
 import com.google.devtools.ksp.isConstructor
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiJavaFile
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.Visibilities
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.getAllFunctions
 import com.google.devtools.ksp.symbol.impl.binary.getAllProperties
+import com.google.devtools.ksp.symbol.impl.findParentDeclaration
 import com.google.devtools.ksp.symbol.impl.kotlin.KSExpectActualNoImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
-import com.google.devtools.ksp.symbol.impl.toKSFunctionDeclaration
+import com.google.devtools.ksp.symbol.impl.toKSModifiers
+import com.google.devtools.ksp.symbol.impl.toLocation
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiEnumConstant
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import com.intellij.psi.PsiJavaFile
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.load.java.structure.impl.JavaClassImpl
-import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
-import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 
 class KSClassDeclarationJavaImpl private constructor(val psi: PsiClass) : KSClassDeclaration, KSDeclarationJavaImpl(),
@@ -80,21 +92,22 @@ class KSClassDeclarationJavaImpl private constructor(val psi: PsiClass) : KSClas
     }
 
     override fun getAllFunctions(): List<KSFunctionDeclaration> =
-            descriptor?.getAllFunctions() ?: emptyList()
+        descriptor?.getAllFunctions() ?: emptyList()
 
     override fun getAllProperties(): List<KSPropertyDeclaration> =
-            descriptor?.getAllProperties() ?: emptyList()
+        descriptor?.getAllProperties() ?: emptyList()
 
     override val declarations: List<KSDeclaration> by lazy {
         val allDeclarations = (psi.fields.map {
             when (it) {
                 is PsiEnumConstant -> KSClassDeclarationJavaEnumEntryImpl.getCached(it)
                 else -> KSPropertyDeclarationJavaImpl.getCached(it)
-            } } +
-                psi.innerClasses.map { KSClassDeclarationJavaImpl.getCached(it) } +
-                psi.constructors.map { KSFunctionDeclarationJavaImpl.getCached(it) } +
-                psi.methods.map { KSFunctionDeclarationJavaImpl.getCached(it) })
-                .distinct()
+            }
+        } +
+            psi.innerClasses.map { KSClassDeclarationJavaImpl.getCached(it) } +
+            psi.constructors.map { KSFunctionDeclarationJavaImpl.getCached(it) } +
+            psi.methods.map { KSFunctionDeclarationJavaImpl.getCached(it) })
+            .distinct()
         // java annotation classes are interface. they get a constructor in .class
         // hence they should get one here.
         if (classKind == ClassKind.ANNOTATION_CLASS || !psi.isInterface) {

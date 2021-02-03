@@ -18,14 +18,20 @@
 
 package com.google.devtools.ksp.symbol.impl.binary
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeArgumentImpl
 import org.jetbrains.kotlin.types.TypeProjection
 
 class KSTypeArgumentDescriptorImpl private constructor(val descriptor: TypeProjection) : KSTypeArgumentImpl() {
     companion object : KSObjectCache<TypeProjection, KSTypeArgumentDescriptorImpl>() {
-        fun getCached(descriptor: TypeProjection) = cache.getOrPut(descriptor) { KSTypeArgumentDescriptorImpl(descriptor) }
+        fun getCached(descriptor: TypeProjection) =
+            cache.getOrPut(descriptor) { KSTypeArgumentDescriptorImpl(descriptor) }
     }
 
     override val origin = Origin.CLASS

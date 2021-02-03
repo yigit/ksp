@@ -18,11 +18,17 @@
 
 package com.google.devtools.ksp.symbol.impl.java
 
-import com.intellij.psi.PsiParameter
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.toLocation
+import com.intellij.psi.PsiParameter
 
 class KSValueParameterJavaImpl private constructor(val psi: PsiParameter) : KSValueParameter {
     companion object : KSObjectCache<PsiParameter, KSValueParameterJavaImpl>() {

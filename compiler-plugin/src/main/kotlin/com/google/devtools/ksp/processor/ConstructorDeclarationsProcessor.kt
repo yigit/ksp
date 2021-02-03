@@ -45,7 +45,7 @@ class ConstructorDeclarationsProcessor : AbstractTestProcessor() {
     class ConstructorsVisitor : KSVisitorVoid() {
         private val declarationsByClass = LinkedHashMap<KSClassDeclaration, MutableList<String>>()
         fun classNames() = declarationsByClass.keys
-        fun toResult() : List<String> {
+        fun toResult(): List<String> {
             return declarationsByClass.entries
                 .sortedBy {
                     // sort by simple name to get cousin classes next to each-other
@@ -56,18 +56,23 @@ class ConstructorDeclarationsProcessor : AbstractTestProcessor() {
                     listOf("class: " + it.key.qualifiedName!!.asString()) + it.value
                 }
         }
+
         fun KSFunctionDeclaration.toSignature(): String {
             return this.simpleName.asString() +
-                    "(${this.parameters.map { 
+                "(${
+                    this.parameters.map {
                         buildString {
                             append(it.type.resolve().declaration.qualifiedName?.asString())
                             if (it.hasDefault) {
                                 append("(hasDefault)")
                             }
                         }
-                    }.joinToString(",")})" +
-                    ": ${this.returnType?.resolve()?.declaration?.qualifiedName?.asString()
-                        ?: "<no-return>"}"
+                    }.joinToString(",")
+                })" +
+                ": ${
+                    this.returnType?.resolve()?.declaration?.qualifiedName?.asString()
+                        ?: "<no-return>"
+                }"
         }
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {

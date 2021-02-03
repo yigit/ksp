@@ -19,7 +19,10 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
 open class TypeAliasComparisonProcessor : AbstractTestProcessor() {
@@ -51,7 +54,6 @@ open class TypeAliasComparisonProcessor : AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }
 
 open class TypeRefCollector : KSTopDownVisitor<MutableCollection<KSTypeReference>, Unit>() {

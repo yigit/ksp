@@ -18,9 +18,15 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import com.google.devtools.ksp.symbol.impl.findParentDeclaration
 import com.google.devtools.ksp.symbol.impl.synthetic.KSTypeReferenceSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.toLocation
 import org.jetbrains.kotlin.lexer.KtTokens.CROSSINLINE_KEYWORD
@@ -62,7 +68,8 @@ class KSValueParameterImpl private constructor(val ktParameter: KtParameter) : K
     }
 
     override val type: KSTypeReference by lazy {
-        ktParameter.typeReference?.let { KSTypeReferenceImpl.getCached(it) } ?: findPropertyForAccessor()?.type ?: KSTypeReferenceSyntheticImpl.getCached(KSErrorType)
+        ktParameter.typeReference?.let { KSTypeReferenceImpl.getCached(it) } ?: findPropertyForAccessor()?.type
+        ?: KSTypeReferenceSyntheticImpl.getCached(KSErrorType)
     }
 
     override val hasDefault: Boolean = ktParameter.hasDefaultValue()

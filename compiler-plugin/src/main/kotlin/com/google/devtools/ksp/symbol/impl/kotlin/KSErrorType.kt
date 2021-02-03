@@ -18,7 +18,11 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.impl.synthetic.KSErrorTypeClassDeclaration
 
 object KSErrorType : KSType {

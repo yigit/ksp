@@ -18,31 +18,90 @@
 
 package com.google.devtools.ksp.processing.impl
 
-import com.google.devtools.ksp.*
+import com.google.devtools.ksp.ExceptionMessage
+import com.google.devtools.ksp.IncrementalContext
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.closestClassDeclaration
+import com.google.devtools.ksp.isOpen
+import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSClassifierReference
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunction
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSPropertyAccessor
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.symbol.Variance
-import com.google.devtools.ksp.symbol.impl.binary.*
-import com.google.devtools.ksp.symbol.impl.findClosestOverridee
+import com.google.devtools.ksp.symbol.impl.binary.KSClassDeclarationDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSFunctionDeclarationDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSPropertyAccessorDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSPropertyDeclarationDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSTypeAliasDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSTypeParameterDescriptorImpl
+import com.google.devtools.ksp.symbol.impl.binary.KSTypeReferenceDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.findPsi
-import com.google.devtools.ksp.symbol.impl.java.*
-import com.google.devtools.ksp.symbol.impl.kotlin.*
+import com.google.devtools.ksp.symbol.impl.java.KSClassDeclarationJavaImpl
+import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
+import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
+import com.google.devtools.ksp.symbol.impl.java.KSTypeReferenceJavaImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSClassDeclarationImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSErrorType
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionDeclarationImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionErrorImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyAccessorImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationParameterImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeAliasImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeArgumentLiteImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeReferenceImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.google.devtools.ksp.symbol.impl.resolveContainingClass
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertyGetterSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertySetterSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSTypeReferenceSyntheticImpl
 import com.intellij.openapi.project.Project
-import com.intellij.psi.*
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import org.jetbrains.kotlin.codegen.ClassBuilderMode
 import org.jetbrains.kotlin.codegen.OwnerKind
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.container.ComponentProvider
 import org.jetbrains.kotlin.container.get
-import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
+import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
+import org.jetbrains.kotlin.descriptors.MemberDescriptor
+import org.jetbrains.kotlin.descriptors.ModuleDescriptor
+import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
+import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import org.jetbrains.kotlin.descriptors.TypeAliasDescriptor
+import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
+import org.jetbrains.kotlin.descriptors.ValueDescriptor
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
+import org.jetbrains.kotlin.descriptors.resolveClassByFqName
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.components.TypeUsage
 import org.jetbrains.kotlin.load.java.descriptors.JavaForKotlinOverridePropertyDescriptor
@@ -53,11 +112,31 @@ import org.jetbrains.kotlin.load.java.lazy.TypeParameterResolver
 import org.jetbrains.kotlin.load.java.lazy.descriptors.LazyJavaTypeParameterDescriptor
 import org.jetbrains.kotlin.load.java.lazy.types.JavaTypeResolver
 import org.jetbrains.kotlin.load.java.lazy.types.toAttributes
-import org.jetbrains.kotlin.load.java.structure.impl.*
+import org.jetbrains.kotlin.load.java.structure.impl.JavaClassImpl
+import org.jetbrains.kotlin.load.java.structure.impl.JavaFieldImpl
+import org.jetbrains.kotlin.load.java.structure.impl.JavaTypeImpl
+import org.jetbrains.kotlin.load.java.structure.impl.JavaTypeParameterImpl
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.resolve.*
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtPsiUtil
+import org.jetbrains.kotlin.psi.KtStubbedPsiUtil
+import org.jetbrains.kotlin.psi.KtTypeAlias
+import org.jetbrains.kotlin.psi.KtTypeParameter
+import org.jetbrains.kotlin.psi.KtTypeReference
+import org.jetbrains.kotlin.resolve.AnnotationResolver
+import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlin.resolve.BindingTrace
+import org.jetbrains.kotlin.resolve.BodyResolver
+import org.jetbrains.kotlin.resolve.LazyTopDownAnalyzer
+import org.jetbrains.kotlin.resolve.OverridingUtil
 import org.jetbrains.kotlin.resolve.calls.inference.components.NewTypeSubstitutor
 import org.jetbrains.kotlin.resolve.calls.inference.components.composeWith
 import org.jetbrains.kotlin.resolve.calls.inference.substitute
@@ -74,10 +153,16 @@ import org.jetbrains.kotlin.resolve.multiplatform.findExpects
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
-import org.jetbrains.kotlin.types.*
+import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlin.types.SimpleType
+import org.jetbrains.kotlin.types.SubstitutionUtils
+import org.jetbrains.kotlin.types.TypeProjection
+import org.jetbrains.kotlin.types.TypeSubstitutor
+import org.jetbrains.kotlin.types.replace
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 import org.jetbrains.kotlin.types.typeUtil.substitute
 import org.jetbrains.kotlin.types.typeUtil.supertypes
+import org.jetbrains.kotlin.types.withAbbreviation
 import org.jetbrains.kotlin.util.containingNonLocalDeclaration
 
 class ResolverImpl(
@@ -181,7 +266,7 @@ class ResolverImpl(
                         val annotationType = it.annotationType
                         (annotationType.element as? KSClassifierReference)?.referencedName()
                             .let { it == null || it == ksName.getShortName() }
-                                && annotationType.resolve().declaration.qualifiedName == ksName
+                            && annotationType.resolve().declaration.qualifiedName == ksName
                     }) {
                     symbols.add(annotated)
                 }
@@ -246,8 +331,12 @@ class ResolverImpl(
     @KspExperimental
     override fun mapToJvmSignature(declaration: KSDeclaration): String {
         return when (declaration) {
-            is KSClassDeclaration -> resolveClassDeclaration(declaration)?.let { typeMapper.mapType(it).descriptor } ?: ""
-            is KSFunctionDeclaration -> resolveFunctionDeclaration(declaration)?.let { typeMapper.mapAsmMethod(it).descriptor } ?: ""
+            is KSClassDeclaration -> resolveClassDeclaration(declaration)?.let {
+                typeMapper.mapType(it).descriptor
+            } ?: ""
+            is KSFunctionDeclaration -> resolveFunctionDeclaration(declaration)?.let {
+                typeMapper.mapAsmMethod(it).descriptor
+            } ?: ""
             is KSPropertyDeclaration -> resolvePropertyDeclaration(declaration)?.let {
                 typeMapper.mapFieldSignature(it.type, it) ?: typeMapper.mapType(it).descriptor
             } ?: ""
@@ -257,7 +346,7 @@ class ResolverImpl(
 
     override fun overrides(overrider: KSDeclaration, overridee: KSDeclaration): Boolean {
         fun resolveForOverride(declaration: KSDeclaration): DeclarationDescriptor? {
-            return when(declaration) {
+            return when (declaration) {
                 is KSPropertyDeclaration -> resolvePropertyDeclaration(declaration)
                 is KSFunctionDeclarationJavaImpl -> resolveJavaDeclaration(declaration.psi)
                 is KSFunctionDeclaration -> resolveFunctionDeclaration(declaration)
@@ -265,15 +354,23 @@ class ResolverImpl(
             }
         }
 
-        if (!overridee.isOpen())
+        if (!overridee.isOpen()) {
             return false
-        if (!overridee.isVisibleFrom(overrider))
+        }
+        if (!overridee.isVisibleFrom(overrider)) {
             return false
-        if (!(overridee is KSFunctionDeclaration || overrider is KSFunctionDeclaration || (overridee is KSPropertyDeclaration && overrider is KSPropertyDeclaration)))
+        }
+        if (!(overridee is KSFunctionDeclaration ||
+                overrider is KSFunctionDeclaration ||
+                (overridee is KSPropertyDeclaration && overrider is KSPropertyDeclaration)
+                )
+        ) {
             return false
+        }
 
-        if (overrider is KSPropertyDeclarationJavaImpl)
+        if (overrider is KSPropertyDeclarationJavaImpl) {
             return false
+        }
 
         val superDescriptor = resolveForOverride(overridee) as? CallableMemberDescriptor ?: return false
         val subDescriptor = resolveForOverride(overrider) as? CallableMemberDescriptor ?: return false
@@ -324,7 +421,8 @@ class ResolverImpl(
                         ?.findEnclosedDescriptor(
                             kindFilter = DescriptorKindFilter.CALLABLES
                         ) {
-                            (it as? PropertyDescriptor)?.getter?.findPsi() == psi || (it as? PropertyDescriptor)?.setter?.findPsi() == psi
+                            (it as? PropertyDescriptor)?.getter?.findPsi() == psi ||
+                                (it as? PropertyDescriptor)?.setter?.findPsi() == psi
                         }
                 } else null
                 property ?: moduleClassResolver
@@ -409,7 +507,8 @@ class ResolverImpl(
     }
 
     fun KotlinType.expandNonRecursively(): KotlinType =
-        (constructor.declarationDescriptor as? TypeAliasDescriptor)?.expandedType?.withAbbreviation(this as SimpleType) ?: this
+        (constructor.declarationDescriptor as? TypeAliasDescriptor)?.expandedType?.withAbbreviation(this as SimpleType)
+            ?: this
 
     fun TypeProjection.expand(): TypeProjection {
         val expandedType = type.expand()
@@ -464,10 +563,10 @@ class ResolverImpl(
                             "unexpected owner type: $owner / ${owner?.javaClass}"
                         }
                         moduleClassResolver.resolveContainingClass(owner)
-                        ?.findEnclosedDescriptor(
-                            kindFilter = DescriptorKindFilter.FUNCTIONS,
-                            filter = { it.findPsi() == owner }
-                        ) as FunctionDescriptor
+                            ?.findEnclosedDescriptor(
+                                kindFilter = DescriptorKindFilter.FUNCTIONS,
+                                filter = { it.findPsi() == owner }
+                            ) as FunctionDescriptor
                     } as DeclarationDescriptor
                     return getKSTypeCached(
                         LazyJavaTypeParameterDescriptor(
@@ -477,7 +576,6 @@ class ResolverImpl(
                             containingDeclaration
                         ).defaultType
                     )
-
                 } else {
                     return getKSTypeCached(resolveJavaType(type.psi), type.element.typeArguments, type.annotations)
                 }
@@ -502,7 +600,9 @@ class ResolverImpl(
                 is TypeParameterDescriptor -> KSTypeParameterDescriptorImpl.getCached(descriptor)
                 is TypeAliasDescriptor -> KSTypeAliasDescriptorImpl.getCached(descriptor)
                 null -> throw IllegalStateException("Failed to resolve descriptor for $kotlinType")
-                else -> throw IllegalStateException("Unexpected descriptor type: ${descriptor.javaClass}, $ExceptionMessage")
+                else -> throw IllegalStateException(
+                    "Unexpected descriptor type: ${descriptor.javaClass}, $ExceptionMessage"
+                )
             }
         }
     }
@@ -540,12 +640,18 @@ class ResolverImpl(
         if (declaration is KtNamedFunction) {
             val dataFlowInfo = DataFlowInfo.EMPTY
             val scope = resolveSession.declarationScopeProvider.getResolutionScopeForDeclaration(declaration)
-            bodyResolver.resolveFunctionBody(dataFlowInfo, bindingTrace, declaration, containingFD as FunctionDescriptor, scope)
+            bodyResolver.resolveFunctionBody(
+                dataFlowInfo,
+                bindingTrace,
+                declaration,
+                containingFD as FunctionDescriptor,
+                scope
+            )
         }
     }
 
     @KspExperimental
-    override fun getJvmName(accessor: KSPropertyAccessor) :String {
+    override fun getJvmName(accessor: KSPropertyAccessor): String {
         val descriptor = resolvePropertyAccessorDeclaration(accessor)
 
         return descriptor?.let {
@@ -555,7 +661,7 @@ class ResolverImpl(
     }
 
     @KspExperimental
-    override fun getJvmName(declaration: KSFunctionDeclaration) :String {
+    override fun getJvmName(declaration: KSFunctionDeclaration): String {
         // function names might be mangled if they receive inline class parameters or they are internal
         val descriptor = resolveFunctionDeclaration(declaration)
         return descriptor?.let {
@@ -573,15 +679,18 @@ class ResolverImpl(
         containing: KSType
     ): KSType {
         val propertyDeclaredIn = property.closestClassDeclaration()
-            ?: throw IllegalArgumentException("Cannot call asMemberOf with a property that is " +
-                "not declared in a class or an interface")
+            ?: throw IllegalArgumentException(
+                "Cannot call asMemberOf with a property that is " +
+                    "not declared in a class or an interface"
+            )
         val declaration = resolvePropertyDeclaration(property)
         if (declaration != null && containing is KSTypeImpl && !containing.isError) {
             incrementalContext.recordLookupWithSupertypes(containing.kotlinType)
             incrementalContext.recordLookupForDeclaration(property)
             if (!containing.kotlinType.isSubtypeOf(propertyDeclaredIn)) {
                 throw IllegalArgumentException(
-                    "$containing is not a sub type of the class/interface that contains `$property` ($propertyDeclaredIn)"
+                    "$containing is not a sub type of the class/interface that contains `$property` " +
+                        "($propertyDeclaredIn)"
                 )
             }
             val typeSubstitutor = containing.kotlinType.createTypeSubstitutor()
@@ -607,10 +716,12 @@ class ResolverImpl(
     private fun computeAsMemberOf(
         function: KSFunctionDeclaration,
         containing: KSType
-    ) : KSFunction {
+    ): KSFunction {
         val functionDeclaredIn = function.closestClassDeclaration()
-            ?: throw IllegalArgumentException("Cannot call asMemberOf with a function that is " +
-                "not declared in a class or an interface")
+            ?: throw IllegalArgumentException(
+                "Cannot call asMemberOf with a function that is " +
+                    "not declared in a class or an interface"
+            )
         val declaration = resolveFunctionDeclaration(function)
         if (declaration != null && containing is KSTypeImpl && !containing.isError) {
             incrementalContext.recordLookupWithSupertypes(containing.kotlinType)
@@ -658,9 +769,13 @@ class ResolverImpl(
             override val charType: KSType by lazy { getKSTypeCached(builtIns.charType) }
             override val booleanType: KSType by lazy { getKSTypeCached(builtIns.booleanType) }
             override val stringType: KSType by lazy { getKSTypeCached(builtIns.stringType) }
-            override val iterableType: KSType by lazy { getKSTypeCached(builtIns.iterableType.replaceArgumentsWithStarProjections()) }
+            override val iterableType: KSType by lazy {
+                getKSTypeCached(builtIns.iterableType.replaceArgumentsWithStarProjections())
+            }
             override val annotationType: KSType by lazy { getKSTypeCached(builtIns.annotationType) }
-            override val arrayType: KSType by lazy { getKSTypeCached(builtIns.array.defaultType.replaceArgumentsWithStarProjections()) }
+            override val arrayType: KSType by lazy {
+                getKSTypeCached(builtIns.array.defaultType.replaceArgumentsWithStarProjections())
+            }
         }
     }
 
@@ -668,8 +783,8 @@ class ResolverImpl(
         it.constructor.declarationDescriptor?.name?.asString() == "Serializable"
     }
 
-    internal val javaSerializableType = module.resolveClassByFqName(FqName("java.io.Serializable"), NoLookupLocation.WHEN_FIND_BY_FQNAME)!!.defaultType
-
+    internal val javaSerializableType =
+        module.resolveClassByFqName(FqName("java.io.Serializable"), NoLookupLocation.WHEN_FIND_BY_FQNAME)!!.defaultType
 }
 
 open class BaseVisitor : KSVisitorVoid() {
@@ -739,7 +854,7 @@ private fun KotlinType.createTypeSubstitutor(): NewTypeSubstitutor {
  *
  * @see: https://github.com/JetBrains/kotlin/blob/master/compiler/cli/src/org/jetbrains/kotlin/cli/jvm/compiler/TopDownAnalyzerFacadeForJVM.kt#L305
  */
-private fun Name.getNonSpecialIdentifier() :String {
+private fun Name.getNonSpecialIdentifier(): String {
     // the analyzer might pass down a special name which will break type mapper name computations.
     // If it is a special name, we turn it back to an id
     if (!isSpecial || asString().isBlank()) {
@@ -756,7 +871,7 @@ private fun Name.getNonSpecialIdentifier() :String {
 private inline fun MemberScope.findEnclosedDescriptor(
     kindFilter: DescriptorKindFilter,
     crossinline filter: (DeclarationDescriptor) -> Boolean
-) : DeclarationDescriptor? {
+): DeclarationDescriptor? {
     return getContributedDescriptors(
         kindFilter = kindFilter
     ).firstOrNull(filter)
@@ -765,7 +880,7 @@ private inline fun MemberScope.findEnclosedDescriptor(
 private inline fun ClassDescriptor.findEnclosedDescriptor(
     kindFilter: DescriptorKindFilter,
     crossinline filter: (DeclarationDescriptor) -> Boolean
-) : DeclarationDescriptor? {
+): DeclarationDescriptor? {
     return this.unsubstitutedMemberScope.findEnclosedDescriptor(
         kindFilter = kindFilter,
         filter = filter

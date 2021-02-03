@@ -18,17 +18,25 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueArgument
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.createKSValueArguments
 import com.google.devtools.ksp.symbol.impl.toLocation
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 
 class KSAnnotationImpl private constructor(val ktAnnotationEntry: KtAnnotationEntry) : KSAnnotation {
     companion object : KSObjectCache<KtAnnotationEntry, KSAnnotationImpl>() {
-        fun getCached(ktAnnotationEntry: KtAnnotationEntry) = cache.getOrPut(ktAnnotationEntry) { KSAnnotationImpl(ktAnnotationEntry) }
+        fun getCached(ktAnnotationEntry: KtAnnotationEntry) =
+            cache.getOrPut(ktAnnotationEntry) { KSAnnotationImpl(ktAnnotationEntry) }
     }
 
     override val origin = Origin.KOTLIN

@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 package com.google.devtools.ksp.symbol
+
 import com.google.devtools.ksp.processing.Resolver
+
 /**
  * Holds the information for a [KSFunctionDeclaration] where type arguments are resolved as member
  * of a specific [KSType].

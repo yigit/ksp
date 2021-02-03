@@ -19,9 +19,9 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSType
 
-open class MakeNullableProcessor: AbstractTestProcessor() {
+open class MakeNullableProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
     val typeCollector = TypeCollector()
     val types = mutableSetOf<KSType>()
@@ -34,7 +34,8 @@ open class MakeNullableProcessor: AbstractTestProcessor() {
             it.accept(typeCollector, types)
         }
 
-        val sortedTypes = types.flatMap { setOf(it, it.makeNullable(), it.makeNotNullable()) }.sortedBy { it.toString() }
+        val sortedTypes =
+            types.flatMap { setOf(it, it.makeNullable(), it.makeNotNullable()) }.sortedBy { it.toString() }
 
         for (i in sortedTypes) {
             for (j in sortedTypes) {
@@ -46,5 +47,4 @@ open class MakeNullableProcessor: AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }

@@ -19,12 +19,11 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
-import org.jetbrains.kotlin.types.getAbbreviation
 
-open class FunctionTypeAliasProcessor: AbstractTestProcessor() {
+open class FunctionTypeAliasProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
     val typeRefCollector = RefCollector()
     val refs = mutableSetOf<KSTypeReference>()
@@ -48,7 +47,6 @@ open class FunctionTypeAliasProcessor: AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }
 
 open class RefCollector : KSTopDownVisitor<MutableCollection<KSTypeReference>, Unit>() {

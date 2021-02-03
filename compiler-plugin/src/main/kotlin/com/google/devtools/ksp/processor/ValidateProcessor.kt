@@ -15,6 +15,7 @@ class ValidateProcessor : AbstractTestProcessor() {
             results.add("${symbol.simpleName.asString()} invalid")
         }
     }
+
     override fun toResult(): List<String> = results
 
     override fun process(resolver: Resolver) {

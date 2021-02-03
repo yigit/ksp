@@ -18,16 +18,24 @@
 
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.resolve.calls.components.hasDefaultValue
 import org.jetbrains.kotlin.resolve.calls.components.isVararg
 
 class KSValueParameterDescriptorImpl private constructor(val descriptor: ValueParameterDescriptor) : KSValueParameter {
     companion object : KSObjectCache<ValueParameterDescriptor, KSValueParameterDescriptorImpl>() {
-        fun getCached(descriptor: ValueParameterDescriptor) = cache.getOrPut(descriptor) { KSValueParameterDescriptorImpl(descriptor) }
+        fun getCached(descriptor: ValueParameterDescriptor) =
+            cache.getOrPut(descriptor) { KSValueParameterDescriptorImpl(descriptor) }
     }
 
     override val origin = Origin.CLASS

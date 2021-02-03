@@ -18,15 +18,16 @@
 
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.findPsi
-import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationParameterImpl
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSPropertyAccessor
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.toFunctionKSModifiers
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import org.jetbrains.kotlin.psi.KtParameter
-import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
 
 abstract class KSPropertyAccessorDescriptorImpl(val descriptor: PropertyAccessorDescriptor) : KSPropertyAccessor {
     override val origin: Origin = Origin.CLASS

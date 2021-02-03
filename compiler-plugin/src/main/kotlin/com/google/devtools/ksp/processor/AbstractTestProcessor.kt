@@ -20,11 +20,15 @@ package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 
 abstract class AbstractTestProcessor : SymbolProcessor {
-    override fun init(options: Map<String, String>, kotlinVersion: KotlinVersion, codeGenerator: CodeGenerator, logger: KSPLogger) {
+    override fun init(
+        options: Map<String, String>,
+        kotlinVersion: KotlinVersion,
+        codeGenerator: CodeGenerator,
+        logger: KSPLogger
+    ) {
     }
 
     override fun finish() {

@@ -13,13 +13,15 @@ class ParameterTypeProcessor : AbstractTestProcessor() {
     }
 
     override fun process(resolver: Resolver) {
-        resolver.getAllFiles().map { it.accept(object : KSTopDownVisitor<Unit, Unit>() {
-            override fun defaultHandler(node: KSNode, data: Unit) {
-            }
+        resolver.getAllFiles().map {
+            it.accept(object : KSTopDownVisitor<Unit, Unit>() {
+                override fun defaultHandler(node: KSNode, data: Unit) {
+                }
 
-            override fun visitValueParameter(valueParameter: KSValueParameter, data: Unit) {
-                result.add(valueParameter.type.resolve().toString())
-            }
-        }, Unit) }
+                override fun visitValueParameter(valueParameter: KSValueParameter, data: Unit) {
+                    result.add(valueParameter.type.resolve().toString())
+                }
+            }, Unit)
+        }
     }
 }

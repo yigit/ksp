@@ -14,8 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package com.google.devtools.ksp.processing
 
 import com.google.devtools.ksp.symbol.*
@@ -57,7 +55,12 @@ interface CodeGenerator {
      * @return OutputStream for writing into files.
      * @see [CodeGenerator] for more details.
      */
-    fun createNewFile(dependencies: Dependencies, packageName: String, fileName: String, extensionName: String = "kt"): OutputStream
+    fun createNewFile(
+        dependencies: Dependencies,
+        packageName: String,
+        fileName: String,
+        extensionName: String = "kt"
+    ): OutputStream
 
     /**
      * Associate [sources] to an output file.
@@ -77,7 +80,11 @@ interface CodeGenerator {
 /**
  * Dependencies of an output file.
  */
-class Dependencies private constructor(val isAllSources: Boolean, val aggregating: Boolean, val originatingFiles: List<KSFile>) {
+class Dependencies private constructor(
+    val isAllSources: Boolean,
+    val aggregating: Boolean,
+    val originatingFiles: List<KSFile>
+) {
 
     /**
      * Create a [Dependencies] to associate with an output.
@@ -87,6 +94,7 @@ class Dependencies private constructor(val isAllSources: Boolean, val aggregatin
      * @param sources Sources for this output to depend on.
      */
     constructor(aggregating: Boolean, vararg sources: KSFile) : this(false, aggregating, sources.toList())
+
     companion object {
         /**
          * A short-hand to all source files.

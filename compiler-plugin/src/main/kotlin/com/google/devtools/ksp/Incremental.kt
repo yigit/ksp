@@ -17,12 +17,23 @@
 
 package com.google.devtools.ksp
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSDeclarationContainer
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.visitor.KSDefaultVisitor
-import com.intellij.psi.*
+import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiJavaFile
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiPackage
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiWildcardType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.util.containers.MultiMap
 import com.intellij.util.io.DataExternalizer
@@ -32,22 +43,33 @@ import org.jetbrains.kotlin.container.ComponentProvider
 import org.jetbrains.kotlin.container.get
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.incremental.*
+import org.jetbrains.kotlin.incremental.LookupStorage
+import org.jetbrains.kotlin.incremental.LookupSymbol
+import org.jetbrains.kotlin.incremental.LookupTrackerImpl
 import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.incremental.components.Position
 import org.jetbrains.kotlin.incremental.components.ScopeKind
+import org.jetbrains.kotlin.incremental.dumpCollection
+import org.jetbrains.kotlin.incremental.isJavaFile
+import org.jetbrains.kotlin.incremental.isKotlinFile
 import org.jetbrains.kotlin.incremental.storage.BasicMap
 import org.jetbrains.kotlin.incremental.storage.CollectionExternalizer
 import org.jetbrains.kotlin.incremental.storage.FileToPathConverter
+import org.jetbrains.kotlin.incremental.update
 import org.jetbrains.kotlin.resolve.descriptorUtil.getAllSuperclassesWithoutAny
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.typeUtil.supertypes
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.File
-import java.util.*
+import java.util.Date
+import java.util.HashSet
 
-class FileToSymbolsMap(storageFile: File) : BasicMap<File, Collection<LookupSymbol>>(storageFile, FileKeyDescriptor, CollectionExternalizer(LookupSymbolExternalizer, { HashSet() })) {
+class FileToSymbolsMap(storageFile: File) : BasicMap<File, Collection<LookupSymbol>>(
+    storageFile,
+    FileKeyDescriptor,
+    CollectionExternalizer(LookupSymbolExternalizer, { HashSet() })
+) {
     override fun dumpKey(key: File): String = key.toString()
 
     override fun dumpValue(value: Collection<LookupSymbol>): String = value.toString()
@@ -101,7 +123,11 @@ object FileExternalizer : DataExternalizer<File> {
     }
 }
 
-class FileToFilesMap(storageFile: File) : BasicMap<File, Collection<File>>(storageFile, FileKeyDescriptor, CollectionExternalizer(FileExternalizer, { HashSet() })) {
+class FileToFilesMap(storageFile: File) : BasicMap<File, Collection<File>>(
+    storageFile,
+    FileKeyDescriptor,
+    CollectionExternalizer(FileExternalizer, { HashSet() })
+) {
 
     operator fun get(key: File): Collection<File>? = storage[key]
 
@@ -112,7 +138,7 @@ class FileToFilesMap(storageFile: File) : BasicMap<File, Collection<File>>(stora
     override fun dumpKey(key: File): String = key.path
 
     override fun dumpValue(value: Collection<File>) =
-            value.dumpCollection()
+        value.dumpCollection()
 
     // TODO: remove values.
     fun remove(key: File) {
@@ -131,7 +157,9 @@ object symbolCollector : KSDefaultVisitor<(LookupSymbol) -> Unit, Unit>() {
             return
 
         val name = declaration.simpleName.asString()
-        val scope = declaration.qualifiedName?.asString()?.let { it.substring(0, Math.max(it.length - name.length - 1, 0))} ?: return
+        val scope =
+            declaration.qualifiedName?.asString()?.let { it.substring(0, Math.max(it.length - name.length - 1, 0)) }
+                ?: return
         data(LookupSymbol(name, scope))
     }
 
@@ -152,10 +180,10 @@ internal class RelativeFileToPathConverter(val baseDir: File) : FileToPathConver
 }
 
 class IncrementalContext(
-        private val options: KspOptions,
-        private val ksFiles: List<KSFile>,
-        private val componentProvider: ComponentProvider,
-        private val anyChangesWildcard: File
+    private val options: KspOptions,
+    private val ksFiles: List<KSFile>,
+    private val componentProvider: ComponentProvider,
+    private val anyChangesWildcard: File
 ) {
     // Symbols defined in changed files. This is used to update symbolsMap in the end.
     private val updatedSymbols = MultiMap.createSet<File, LookupSymbol>()
@@ -166,15 +194,15 @@ class IncrementalContext(
     private val cachesUpToDateFile = File(options.cachesDir, "caches.uptodate")
     private val isIncremental = options.incremental
     private var rebuild = !isIncremental || !cachesUpToDateFile.exists()
-            || (options.knownModified.isEmpty() && options.knownRemoved.isEmpty())
-            || (options.knownModified + options.knownRemoved).any { !it.isKotlinFile(listOf("kt")) && !it.isJavaFile() }
+        || (options.knownModified.isEmpty() && options.knownRemoved.isEmpty())
+        || (options.knownModified + options.knownRemoved).any { !it.isKotlinFile(listOf("kt")) && !it.isJavaFile() }
 
     private val baseDir = options.projectBaseDir
 
     private val logsDir = File(baseDir, "build").apply { mkdir() }
     private val buildTime = Date().time
 
-    private val modified = options.knownModified.map{ it.relativeTo(baseDir) }.toSet()
+    private val modified = options.knownModified.map { it.relativeTo(baseDir) }.toSet()
     private val removed = options.knownRemoved.map { it.relativeTo(baseDir) }.toSet()
 
     private val lookupTracker: LookupTracker = componentProvider.get()
@@ -227,7 +255,10 @@ class IncrementalContext(
         }
 
         // For each changed symbol, either changed, modified or removed, invalidate files that looked them up, recursively.
-        val invalidator = DepInvalidator(lookupCache, symbolsMap, ksFiles.filter { it.relativeFile in removed || it.relativeFile in modified }.map { it.relativeFile })
+        val invalidator = DepInvalidator(
+            lookupCache,
+            symbolsMap,
+            ksFiles.filter { it.relativeFile in removed || it.relativeFile in modified }.map { it.relativeFile })
         changedSyms.forEach {
             invalidator.invalidate(it)
         }
@@ -236,8 +267,10 @@ class IncrementalContext(
     }
 
     // Propagate dirtiness by source-output maps.
-    private fun calcDirtySetByOutputs(sourceToOutputs: FileToFilesMap,
-                                      initialSet: Set<File>): Set<File> {
+    private fun calcDirtySetByOutputs(
+        sourceToOutputs: FileToFilesMap,
+        initialSet: Set<File>
+    ): Set<File> {
         val outputToSources = mutableMapOf<File, MutableSet<File>>()
         sourceToOutputs.keys.forEach { source ->
             if (source != anyChangesWildcard) {
@@ -300,7 +333,7 @@ class IncrementalContext(
         logFile.appendText("Dirty sources\n")
         dirtyFiles.forEach { logFile.appendText("  $it\n") }
         logFile.appendText("Outputs to remove\n")
-        outputsToRemove.forEach { logFile.appendText("  $it\n")}
+        outputsToRemove.forEach { logFile.appendText("  $it\n") }
         logFile.appendText("\n")
     }
 
@@ -367,7 +400,11 @@ class IncrementalContext(
         }
     }
 
-    private fun updateSourceToOutputs(dirtyFiles: Collection<File>, outputs: Set<File>, sourceToOutputs: Map<File, Set<File>>) {
+    private fun updateSourceToOutputs(
+        dirtyFiles: Collection<File>,
+        outputs: Set<File>,
+        sourceToOutputs: Map<File, Set<File>>
+    ) {
         // Prune deleted sources in source-to-outputs map.
         removed.forEach {
             sourceToOutputsMap.remove(it)
@@ -375,7 +412,7 @@ class IncrementalContext(
 
         // Merge source-to-outputs map from those reprocessed.
         dirtyFiles.forEach { source ->
-            sourceToOutputs[source]?.let { sourceToOutputsMap[source] = it} ?: sourceToOutputsMap.remove(source)
+            sourceToOutputs[source]?.let { sourceToOutputsMap[source] = it } ?: sourceToOutputsMap.remove(source)
         }
 
         logSourceToOutputs()
@@ -441,7 +478,11 @@ class IncrementalContext(
         symbolsMap.close()
     }
 
-    fun updateCachesAndOutputs(dirtyFiles: Collection<KSFile>, outputs: Set<File>, sourceToOutputs: Map<File, Set<File>>) {
+    fun updateCachesAndOutputs(
+        dirtyFiles: Collection<KSFile>,
+        outputs: Set<File>,
+        sourceToOutputs: Map<File, Set<File>>
+    ) {
         if (!isIncremental)
             return
 
@@ -478,7 +519,7 @@ class IncrementalContext(
         //   1. definition of the name in the same package
         //   2. other * imports
         val onDemandImports =
-                psiFile.getOnDemandImports(false, false).mapNotNull { (it as? PsiPackage)?.qualifiedName }
+            psiFile.getOnDemandImports(false, false).mapNotNull { (it as? PsiPackage)?.qualifiedName }
         if (scope in onDemandImports) {
             record(psiFile.packageName, name)
             onDemandImports.forEach {
@@ -608,9 +649,9 @@ class IncrementalContext(
 }
 
 internal class DepInvalidator(
-        private val lookupCache: LookupStorage,
-        private val symbolsMap: FileToSymbolsMap,
-        changedFiles: List<File>
+    private val lookupCache: LookupStorage,
+    private val symbolsMap: FileToSymbolsMap,
+    changedFiles: List<File>
 ) {
     private val visitedSyms = mutableSetOf<LookupSymbol>()
     val visitedFiles = mutableSetOf<File>().apply { addAll(changedFiles) }

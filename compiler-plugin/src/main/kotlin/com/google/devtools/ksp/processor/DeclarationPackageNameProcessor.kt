@@ -43,7 +43,8 @@ class NameCollector : KSTopDownVisitor<MutableCollection<String>, Unit>() {
     override fun defaultHandler(node: KSNode, data: MutableCollection<String>) {}
 
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: MutableCollection<String>) {
-        classDeclaration.packageName.asString().let { data.add("${if (it == "") "<no name>" else it}:${classDeclaration.simpleName.asString()}") }
+        classDeclaration.packageName.asString()
+            .let { data.add("${if (it == "") "<no name>" else it}:${classDeclaration.simpleName.asString()}") }
         super.visitClassDeclaration(classDeclaration, data)
     }
 
@@ -62,7 +63,8 @@ class NameCollector : KSTopDownVisitor<MutableCollection<String>, Unit>() {
     }
 
     override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: MutableCollection<String>) {
-        property.packageName.asString().let { data.add("${if (it == "") "<no name>" else it}:${property.simpleName.asString()}") }
+        property.packageName.asString()
+            .let { data.add("${if (it == "") "<no name>" else it}:${property.simpleName.asString()}") }
         super.visitPropertyDeclaration(property, data)
     }
 }

@@ -19,29 +19,37 @@
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.isConstructor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.Visibilities
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.getAllFunctions
 import com.google.devtools.ksp.symbol.impl.binary.getAllProperties
+import com.google.devtools.ksp.symbol.impl.getClassType
+import com.google.devtools.ksp.symbol.impl.getKSDeclarations
+import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
-import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
-import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 
 class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrObject) : KSClassDeclaration,
     KSDeclarationImpl(ktClassOrObject),
     KSExpectActual by KSExpectActualImpl(ktClassOrObject) {
     companion object : KSObjectCache<KtClassOrObject, KSClassDeclarationImpl>() {
-        fun getCached(ktClassOrObject: KtClassOrObject) = cache.getOrPut(ktClassOrObject) { KSClassDeclarationImpl(ktClassOrObject) }
+        fun getCached(ktClassOrObject: KtClassOrObject) =
+            cache.getOrPut(ktClassOrObject) { KSClassDeclarationImpl(ktClassOrObject) }
     }
 
     override val classKind: ClassKind by lazy {
@@ -59,7 +67,8 @@ class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrO
     override val declarations: List<KSDeclaration> by lazy {
         val propertiesFromConstructor = primaryConstructor?.parameters
             ?.filter { it.isVar || it.isVal }
-            ?.map { KSPropertyDeclarationParameterImpl.getCached((it as KSValueParameterImpl).ktParameter) } ?: emptyList()
+            ?.map { KSPropertyDeclarationParameterImpl.getCached((it as KSValueParameterImpl).ktParameter) }
+            ?: emptyList()
         val result = ktClassOrObject.declarations.getKSDeclarations().toMutableList<KSDeclaration>()
         result.addAll(propertiesFromConstructor)
         primaryConstructor?.let { primaryConstructor: KSFunctionDeclaration ->
@@ -87,7 +96,8 @@ class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrO
     override val primaryConstructor: KSFunctionDeclaration? by lazy {
         ktClassOrObject.primaryConstructor?.let { KSFunctionDeclarationImpl.getCached(it) }
             ?: if ((classKind == ClassKind.CLASS || classKind == ClassKind.ENUM_CLASS)
-                    && ktClassOrObject.declarations.none { it is KtSecondaryConstructor })
+                && ktClassOrObject.declarations.none { it is KtSecondaryConstructor }
+            )
                 KSConstructorSyntheticImpl.getCached(this) else null
     }
 

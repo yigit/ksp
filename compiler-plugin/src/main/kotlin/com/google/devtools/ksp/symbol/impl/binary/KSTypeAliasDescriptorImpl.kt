@@ -1,20 +1,23 @@
 package com.google.devtools.ksp.symbol.impl.binary
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import org.jetbrains.kotlin.descriptors.ClassKind
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.MemberDescriptor
 import org.jetbrains.kotlin.descriptors.TypeAliasDescriptor
-import org.jetbrains.kotlin.types.KotlinType
 
 class KSTypeAliasDescriptorImpl(descriptor: TypeAliasDescriptor) : KSTypeAlias,
-        KSDeclarationDescriptorImpl(descriptor),
-        KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
+    KSDeclarationDescriptorImpl(descriptor),
+    KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
     companion object : KSObjectCache<TypeAliasDescriptor, KSTypeAliasDescriptorImpl>() {
-        fun getCached(descriptor: TypeAliasDescriptor) = KSTypeAliasDescriptorImpl.cache.getOrPut(descriptor) { KSTypeAliasDescriptorImpl(descriptor) }
+        fun getCached(descriptor: TypeAliasDescriptor) =
+            KSTypeAliasDescriptorImpl.cache.getOrPut(descriptor) { KSTypeAliasDescriptorImpl(descriptor) }
     }
 
     override val name: KSName by lazy {
@@ -36,5 +39,4 @@ class KSTypeAliasDescriptorImpl(descriptor: TypeAliasDescriptor) : KSTypeAlias,
     override fun <D, R> accept(visitor: KSVisitor<D, R>, data: D): R {
         return visitor.visitTypeAlias(this, data)
     }
-
 }

@@ -18,22 +18,29 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import org.jetbrains.kotlin.descriptors.VariableDescriptorWithAccessors
 import com.google.devtools.ksp.isLocal
-import com.google.devtools.ksp.isOpen
 import com.google.devtools.ksp.isPrivate
-import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findClosestOverridee
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertyGetterSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertySetterSyntheticImpl
+import com.google.devtools.ksp.symbol.impl.toKSPropertyDeclaration
+import org.jetbrains.kotlin.descriptors.VariableDescriptorWithAccessors
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
-import org.jetbrains.kotlin.resolve.OverridingUtil
 
-class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) : KSPropertyDeclaration, KSDeclarationImpl(ktProperty),
+class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) : KSPropertyDeclaration,
+    KSDeclarationImpl(ktProperty),
     KSExpectActual by KSExpectActualImpl(ktProperty) {
     companion object : KSObjectCache<KtProperty, KSPropertyDeclarationImpl>() {
         fun getCached(ktProperty: KtProperty) = cache.getOrPut(ktProperty) { KSPropertyDeclarationImpl(ktProperty) }
@@ -53,11 +60,11 @@ class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) 
 
     private fun shouldCreateSyntheticAccessor(): Boolean {
         return !this.isPrivate()
-                && (
-                !this.isLocal() && !this.modifiers.contains(Modifier.ABSTRACT)
-                        && (this.parentDeclaration as? KSClassDeclaration)?.classKind != ClassKind.INTERFACE
-                        || ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE && ktProperty.accessors.isNotEmpty())
-                )
+            && (
+            !this.isLocal() && !this.modifiers.contains(Modifier.ABSTRACT)
+                && (this.parentDeclaration as? KSClassDeclaration)?.classKind != ClassKind.INTERFACE
+                || ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE && ktProperty.accessors.isNotEmpty())
+            )
     }
 
     override val getter: KSPropertyGetter? by lazy {

@@ -18,16 +18,31 @@
 
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.*
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findClosestOverridee
+import com.google.devtools.ksp.symbol.impl.toKSModifiers
+import com.google.devtools.ksp.symbol.impl.toKSPropertyDeclaration
+import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import org.jetbrains.kotlin.descriptors.PropertyGetterDescriptor
+import org.jetbrains.kotlin.descriptors.PropertySetterDescriptor
 
-class KSPropertyDeclarationDescriptorImpl private constructor(val descriptor: PropertyDescriptor) : KSPropertyDeclaration,
+class KSPropertyDeclarationDescriptorImpl private constructor(val descriptor: PropertyDescriptor) :
+    KSPropertyDeclaration,
     KSDeclarationDescriptorImpl(descriptor),
     KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
     companion object : KSObjectCache<PropertyDescriptor, KSPropertyDeclarationDescriptorImpl>() {
-        fun getCached(descriptor: PropertyDescriptor) = cache.getOrPut(descriptor) { KSPropertyDeclarationDescriptorImpl(descriptor) }
+        fun getCached(descriptor: PropertyDescriptor) =
+            cache.getOrPut(descriptor) { KSPropertyDeclarationDescriptorImpl(descriptor) }
     }
 
     override val extensionReceiver: KSTypeReference? by lazy {

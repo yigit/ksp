@@ -19,27 +19,33 @@
 package com.google.devtools.ksp.symbol.impl.binary
 
 import com.google.devtools.ksp.ExceptionMessage
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.impl.AnonymousFunctionDescriptor
-import com.google.devtools.ksp.isOpen
-import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.FunctionKind
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.findClosestOverridee
 import com.google.devtools.ksp.symbol.impl.toFunctionKSModifiers
 import com.google.devtools.ksp.symbol.impl.toKSFunctionDeclaration
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
+import org.jetbrains.kotlin.descriptors.impl.AnonymousFunctionDescriptor
 import org.jetbrains.kotlin.load.java.isFromJava
-import org.jetbrains.kotlin.resolve.OverridingUtil
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
-class KSFunctionDeclarationDescriptorImpl private constructor(val descriptor: FunctionDescriptor) : KSFunctionDeclaration,
+class KSFunctionDeclarationDescriptorImpl private constructor(val descriptor: FunctionDescriptor) :
+    KSFunctionDeclaration,
     KSDeclarationDescriptorImpl(descriptor),
     KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
     companion object : KSObjectCache<FunctionDescriptor, KSFunctionDeclarationDescriptorImpl>() {
-        fun getCached(descriptor: FunctionDescriptor) = cache.getOrPut(descriptor) { KSFunctionDeclarationDescriptorImpl(descriptor) }
+        fun getCached(descriptor: FunctionDescriptor) =
+            cache.getOrPut(descriptor) { KSFunctionDeclarationDescriptorImpl(descriptor) }
     }
 
     override fun findOverridee(): KSFunctionDeclaration? {
@@ -63,7 +69,6 @@ class KSFunctionDeclarationDescriptorImpl private constructor(val descriptor: Fu
     }
 
     override val functionKind: FunctionKind by lazy {
-
         when {
             descriptor.dispatchReceiverParameter == null -> when {
                 descriptor.isFromJava -> FunctionKind.STATIC
@@ -71,7 +76,9 @@ class KSFunctionDeclarationDescriptorImpl private constructor(val descriptor: Fu
             }
             !descriptor.name.isSpecial && !descriptor.name.asString().isEmpty() -> FunctionKind.MEMBER
             descriptor is AnonymousFunctionDescriptor -> FunctionKind.ANONYMOUS
-            else -> throw IllegalStateException("Unable to resolve FunctionKind for ${descriptor.fqNameSafe}, $ExceptionMessage")
+            else -> throw IllegalStateException(
+                "Unable to resolve FunctionKind for ${descriptor.fqNameSafe}, $ExceptionMessage"
+            )
         }
     }
 

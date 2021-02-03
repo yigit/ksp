@@ -18,6 +18,21 @@
 
 package com.google.devtools.ksp
 
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.impl.CodeGeneratorImpl
+import com.google.devtools.ksp.processing.impl.ResolverImpl
+import com.google.devtools.ksp.processor.AbstractTestProcessor
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCacheManager
+import com.google.devtools.ksp.symbol.impl.java.KSFileJavaImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSFileImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -28,15 +43,6 @@ import org.jetbrains.kotlin.cli.jvm.plugins.ServiceLoaderLite
 import org.jetbrains.kotlin.container.ComponentProvider
 import org.jetbrains.kotlin.context.ProjectContext
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.processing.SymbolProcessor
-import com.google.devtools.ksp.processing.impl.CodeGeneratorImpl
-import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.processor.AbstractTestProcessor
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.KSObjectCacheManager
-import com.google.devtools.ksp.symbol.impl.java.KSFileJavaImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSFileImpl
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
@@ -55,13 +61,18 @@ class KotlinSymbolProcessingExtension(
             listOf(testProcessor)
         } else {
             val processingClasspath = options.processingClasspath
-            val classLoader = URLClassLoader(processingClasspath.map { it.toURI().toURL() }.toTypedArray(), javaClass.classLoader)
+            val classLoader =
+                URLClassLoader(processingClasspath.map { it.toURI().toURL() }.toTypedArray(), javaClass.classLoader)
             ServiceLoaderLite.loadImplementations(SymbolProcessor::class.java, classLoader)
         }
     }
 }
 
-abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, val logger: KSPLogger, val testMode: Boolean) :
+abstract class AbstractKotlinSymbolProcessingExtension(
+    val options: KspOptions,
+    val logger: KSPLogger,
+    val testMode: Boolean
+) :
     AnalysisHandlerExtension {
     override fun doAnalysis(
         project: Project,
@@ -83,8 +94,8 @@ abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, 
         val anyChangesWildcard = AnyChanges(options.projectBaseDir)
         val ksFiles = files.map { KSFileImpl.getCached(it) } + javaFiles.map { KSFileJavaImpl.getCached(it) }
         val incrementalContext = IncrementalContext(
-                options, ksFiles, componentProvider,
-                File(anyChangesWildcard.filePath).relativeTo(options.projectBaseDir)
+            options, ksFiles, componentProvider,
+            File(anyChangesWildcard.filePath).relativeTo(options.projectBaseDir)
         )
         val dirtyFiles = incrementalContext.calcDirtyFiles()
 

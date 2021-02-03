@@ -19,14 +19,23 @@
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.binary.KSTypeArgumentDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.getAbbreviation
 import org.jetbrains.kotlin.types.isError
-import org.jetbrains.kotlin.types.typeUtil.*
+import org.jetbrains.kotlin.types.typeUtil.TypeNullability
+import org.jetbrains.kotlin.types.typeUtil.isSubtypeOf
+import org.jetbrains.kotlin.types.typeUtil.makeNotNullable
+import org.jetbrains.kotlin.types.typeUtil.makeNullable
+import org.jetbrains.kotlin.types.typeUtil.nullability
+import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 
 class KSTypeImpl private constructor(
     val kotlinType: KotlinType,

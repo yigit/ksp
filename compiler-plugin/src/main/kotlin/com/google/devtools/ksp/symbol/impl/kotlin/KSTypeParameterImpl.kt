@@ -19,15 +19,25 @@
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.ExceptionMessage
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import com.google.devtools.ksp.symbol.impl.toLocation
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtTypeParameter
+import org.jetbrains.kotlin.psi.KtTypeParameterListOwner
 
-class KSTypeParameterImpl private constructor(val ktTypeParameter: KtTypeParameter, val owner: KtTypeParameterListOwner) : KSTypeParameter,
+class KSTypeParameterImpl private constructor(
+    val ktTypeParameter: KtTypeParameter,
+    val owner: KtTypeParameterListOwner
+) : KSTypeParameter,
     KSDeclarationImpl(ktTypeParameter),
     KSExpectActual by KSExpectActualNoImpl() {
     companion object : KSObjectCache<Pair<KtTypeParameter, KtTypeParameterListOwner>, KSTypeParameterImpl>() {

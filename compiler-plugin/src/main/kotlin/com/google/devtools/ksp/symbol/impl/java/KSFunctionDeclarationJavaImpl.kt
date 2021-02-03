@@ -19,16 +19,36 @@
 package com.google.devtools.ksp.symbol.impl.java
 
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.FunctionKind
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findClosestOverridee
+import com.google.devtools.ksp.symbol.impl.findParentDeclaration
 import com.google.devtools.ksp.symbol.impl.kotlin.KSExpectActualNoImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import com.google.devtools.ksp.symbol.impl.toKSFunctionDeclaration
+import com.google.devtools.ksp.symbol.impl.toKSModifiers
+import com.google.devtools.ksp.symbol.impl.toLocation
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.impl.source.PsiClassReferenceType
 
-class KSFunctionDeclarationJavaImpl private constructor(val psi: PsiMethod) : KSFunctionDeclaration, KSDeclarationJavaImpl(),
+class KSFunctionDeclarationJavaImpl private constructor(val psi: PsiMethod) : KSFunctionDeclaration,
+    KSDeclarationJavaImpl(),
     KSExpectActual by KSExpectActualNoImpl() {
     companion object : KSObjectCache<PsiMethod, KSFunctionDeclarationJavaImpl>() {
         fun getCached(psi: PsiMethod) = cache.getOrPut(psi) { KSFunctionDeclarationJavaImpl(psi) }
@@ -64,8 +84,8 @@ class KSFunctionDeclarationJavaImpl private constructor(val psi: PsiMethod) : KS
 
     override val isAbstract: Boolean by lazy {
         this.modifiers.contains(Modifier.ABSTRACT) ||
-                ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE &&
-                        !this.modifiers.contains(Modifier.JAVA_DEFAULT))
+            ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE &&
+                !this.modifiers.contains(Modifier.JAVA_DEFAULT))
     }
 
     override val modifiers: Set<Modifier> by lazy {

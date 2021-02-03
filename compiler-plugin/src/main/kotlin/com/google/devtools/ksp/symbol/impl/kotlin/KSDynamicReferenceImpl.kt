@@ -18,9 +18,13 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSDynamicReference
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import org.jetbrains.kotlin.psi.KtUserType
 
 class KSDynamicReferenceImpl private constructor() : KSDynamicReference {
     companion object : KSObjectCache<Unit, KSDynamicReferenceImpl>() {

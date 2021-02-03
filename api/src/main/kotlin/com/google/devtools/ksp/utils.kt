@@ -14,12 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package com.google.devtools.ksp
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeParameter
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.Visibility
 import com.google.devtools.ksp.visitor.KSValidateVisitor
 
 /**
@@ -42,7 +56,8 @@ inline fun <reified T> Resolver.getClassDeclarationByName(): KSClassDeclaration?
  * @param name fully qualified name of the class to be loaded; using '.' as separator.
  * @return a KSClassDeclaration, or null if not found.
  */
-fun Resolver.getClassDeclarationByName(name: String): KSClassDeclaration? = getClassDeclarationByName(getKSNameFromString(name))
+fun Resolver.getClassDeclarationByName(name: String): KSClassDeclaration? =
+    getClassDeclarationByName(getKSNameFromString(name))
 
 /**
  * Get functions directly declared inside the class declaration.
@@ -81,7 +96,7 @@ fun KSDeclaration.isLocal(): Boolean {
  * Perform a validation on a given symbol to check if all interested types in symbols enclosed scope are valid, i.e. resolvable.
  * @param predicate: A lambda for filtering interested symbols for performance purpose. Default checks all.
  */
-fun KSNode.validate(predicate: (KSNode?, KSNode) -> Boolean = { _, _-> true } ): Boolean {
+fun KSNode.validate(predicate: (KSNode?, KSNode) -> Boolean = { _, _ -> true }): Boolean {
     return this.accept(KSValidateVisitor(predicate), null)
 }
 
@@ -111,7 +126,8 @@ fun KSDeclaration.getVisibility(): Visibility {
         }
         this.isLocal() -> Visibility.LOCAL
         this.modifiers.contains(Modifier.PRIVATE) -> Visibility.PRIVATE
-        this.modifiers.contains(Modifier.PROTECTED) || this.modifiers.contains(Modifier.OVERRIDE) -> Visibility.PROTECTED
+        this.modifiers.contains(Modifier.PROTECTED) || this.modifiers.contains(Modifier.OVERRIDE) ->
+            Visibility.PROTECTED
         this.modifiers.contains(Modifier.INTERNAL) -> Visibility.INTERNAL
         this.modifiers.contains(Modifier.PUBLIC) -> Visibility.PUBLIC
         else -> if (this.origin != Origin.JAVA) Visibility.PUBLIC else Visibility.JAVA_PACKAGE
@@ -153,18 +169,23 @@ fun KSClassDeclaration.getAllSuperTypes(): Sequence<KSType> {
         .distinct()
 }
 
-fun KSClassDeclaration.isAbstract() = this.classKind == ClassKind.INTERFACE || this.modifiers.contains(Modifier.ABSTRACT)
+fun KSClassDeclaration.isAbstract() =
+    this.classKind == ClassKind.INTERFACE || this.modifiers.contains(Modifier.ABSTRACT)
 
-fun KSPropertyDeclaration.isAbstract() = this.modifiers.contains(Modifier.ABSTRACT)
-        || ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE && this.getter == null && this.setter == null)
+fun KSPropertyDeclaration.isAbstract() =
+    this.modifiers.contains(Modifier.ABSTRACT) || (
+        (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE &&
+            this.getter == null && this.setter == null
+        )
 
-fun KSDeclaration.isOpen() = !this.isLocal()
-        && ((this as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-        || this.modifiers.contains(Modifier.OVERRIDE)
-        || this.modifiers.contains(Modifier.ABSTRACT)
-        || this.modifiers.contains(Modifier.OPEN)
-        || (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-        || (!this.modifiers.contains(Modifier.FINAL) && this.origin == Origin.JAVA)
+fun KSDeclaration.isOpen() = !this.isLocal() &&
+    (
+        (this as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE ||
+            this.modifiers.contains(Modifier.OVERRIDE) ||
+            this.modifiers.contains(Modifier.ABSTRACT) ||
+            this.modifiers.contains(Modifier.OPEN) ||
+            (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE ||
+            (!this.modifiers.contains(Modifier.FINAL) && this.origin == Origin.JAVA)
         )
 
 fun KSDeclaration.isPublic() = this.getVisibility() == Visibility.PUBLIC
@@ -193,10 +214,10 @@ fun KSAnnotated.findAnnotationFromUseSiteTarget(): Collection<KSAnnotation> {
     }
 }
 
-
 // TODO: cross module visibility is not handled
 fun KSDeclaration.isVisibleFrom(other: KSDeclaration): Boolean {
-    fun KSDeclaration.isSamePackage(other: KSDeclaration): Boolean = this.containingFile?.packageName == other.containingFile?.packageName
+    fun KSDeclaration.isSamePackage(other: KSDeclaration): Boolean =
+        this.containingFile?.packageName == other.containingFile?.packageName
 
     // lexical scope for local declaration.
     fun KSDeclaration.parentDeclarationsForLocal(): List<KSDeclaration> {
@@ -215,13 +236,13 @@ fun KSDeclaration.isVisibleFrom(other: KSDeclaration): Boolean {
     }
 
     fun KSDeclaration.isVisibleInPrivate(other: KSDeclaration) =
-        (other.isLocal() && other.parentDeclarationsForLocal().contains(this.parentDeclaration))
-                || this.parentDeclaration == other.parentDeclaration
-                || this.parentDeclaration == other
-                || (
-                this.parentDeclaration == null
-                        && other.parentDeclaration == null
-                        && this.containingFile == other.containingFile
+        (other.isLocal() && other.parentDeclarationsForLocal().contains(this.parentDeclaration)) ||
+            this.parentDeclaration == other.parentDeclaration ||
+            this.parentDeclaration == other ||
+            (
+                this.parentDeclaration == null &&
+                    other.parentDeclaration == null &&
+                    this.containingFile == other.containingFile
                 )
 
     return when {

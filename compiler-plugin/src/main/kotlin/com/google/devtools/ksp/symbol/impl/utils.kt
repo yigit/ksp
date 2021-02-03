@@ -19,9 +19,6 @@
 package com.google.devtools.ksp.symbol.impl
 
 import com.google.devtools.ksp.ExceptionMessage
-import com.intellij.lang.jvm.JvmModifier
-import com.intellij.psi.*
-import org.jetbrains.kotlin.descriptors.*
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.ClassKind
@@ -33,11 +30,14 @@ import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
+import com.intellij.lang.jvm.JvmModifier
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassImpl
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.JavaDescriptorVisibilities
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassConstructorDescriptor
-import org.jetbrains.kotlin.load.java.structure.JavaMember
+import org.jetbrains.kotlin.load.java.lazy.ModuleClassResolver
 import org.jetbrains.kotlin.load.java.structure.impl.JavaConstructorImpl
 import org.jetbrains.kotlin.load.java.structure.impl.JavaMethodImpl
 import org.jetbrains.kotlin.psi.*
@@ -47,7 +47,6 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.StarProjectionImpl
 import org.jetbrains.kotlin.types.TypeProjectionImpl
 import org.jetbrains.kotlin.types.replace
-import org.jetbrains.kotlin.load.java.lazy.ModuleClassResolver
 
 val jvmModifierMap = mapOf(
     JvmModifier.PUBLIC to Modifier.PUBLIC,
@@ -259,7 +258,9 @@ internal fun KotlinType.replaceTypeArguments(newArguments: List<KSTypeArgument>)
     })
 
 internal fun FunctionDescriptor.toKSFunctionDeclaration(): KSFunctionDeclaration {
-    if (this.kind != CallableMemberDescriptor.Kind.DECLARATION) return KSFunctionDeclarationDescriptorImpl.getCached(this)
+    if (this.kind != CallableMemberDescriptor.Kind.DECLARATION) return KSFunctionDeclarationDescriptorImpl.getCached(
+        this
+    )
     val psi = this.findPsi() ?: return KSFunctionDeclarationDescriptorImpl.getCached(this)
     // Java default constructor has a kind DECLARATION of while still being synthetic.
     if (psi is PsiClassImpl && this is JavaClassConstructorDescriptor) {
@@ -273,7 +274,9 @@ internal fun FunctionDescriptor.toKSFunctionDeclaration(): KSFunctionDeclaration
 }
 
 internal fun PropertyDescriptor.toKSPropertyDeclaration(): KSPropertyDeclaration {
-    if (this.kind != CallableMemberDescriptor.Kind.DECLARATION) return KSPropertyDeclarationDescriptorImpl.getCached(this)
+    if (this.kind != CallableMemberDescriptor.Kind.DECLARATION) return KSPropertyDeclarationDescriptorImpl.getCached(
+        this
+    )
     val psi = this.findPsi() ?: return KSPropertyDeclarationDescriptorImpl.getCached(this)
     return when (psi) {
         is KtProperty -> KSPropertyDeclarationImpl.getCached(psi)

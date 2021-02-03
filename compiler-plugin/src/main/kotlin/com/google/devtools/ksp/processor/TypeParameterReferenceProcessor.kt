@@ -19,12 +19,11 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.binary.KSTypeReferenceDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSTypeImpl
-import com.google.devtools.ksp.visitor.KSTopDownVisitor
+import com.google.devtools.ksp.symbol.KSClassifierReference
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Origin
 
-open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
+open class TypeParameterReferenceProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
     val collector = ReferenceCollector()
     val references = mutableSetOf<KSTypeReference>()
@@ -36,7 +35,8 @@ open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
             it.accept(collector, references)
         }
 
-        val sortedReferences = references.filter { it.element is KSClassifierReference && it.origin == Origin.KOTLIN }.sortedBy { (it.element as KSClassifierReference).referencedName() }
+        val sortedReferences = references.filter { it.element is KSClassifierReference && it.origin == Origin.KOTLIN }
+            .sortedBy { (it.element as KSClassifierReference).referencedName() }
 
         for (i in sortedReferences) {
             val r = i.resolve()
@@ -47,5 +47,4 @@ open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }

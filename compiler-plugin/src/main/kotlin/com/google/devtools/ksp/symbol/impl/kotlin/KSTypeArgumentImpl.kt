@@ -18,7 +18,13 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.toLocation
 import org.jetbrains.kotlin.psi.KtProjectionKind
@@ -47,7 +53,8 @@ abstract class KSTypeArgumentImpl : KSTypeArgument {
 
 class KSTypeArgumentKtImpl private constructor(val ktTypeArgument: KtTypeProjection) : KSTypeArgumentImpl() {
     companion object : KSObjectCache<KtTypeProjection, KSTypeArgumentKtImpl>() {
-        fun getCached(ktTypeArgument: KtTypeProjection) = cache.getOrPut(ktTypeArgument) { KSTypeArgumentKtImpl(ktTypeArgument) }
+        fun getCached(ktTypeArgument: KtTypeProjection) =
+            cache.getOrPut(ktTypeArgument) { KSTypeArgumentKtImpl(ktTypeArgument) }
     }
 
     override val origin = Origin.KOTLIN

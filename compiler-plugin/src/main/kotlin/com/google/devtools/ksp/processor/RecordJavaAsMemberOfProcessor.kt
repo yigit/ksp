@@ -20,7 +20,10 @@ package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
 
 class RecordJavaAsMemberOfProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
@@ -53,7 +56,7 @@ class RecordJavaAsMemberOfProcessor : AbstractTestProcessor() {
         if (resolver is ResolverImpl) {
             val m = resolver.incrementalContext.dumpLookupRecords()
             m.toSortedMap().forEach { symbol, files ->
-                files.filter { it.endsWith(".java")}.sorted().forEach {
+                files.filter { it.endsWith(".java") }.sorted().forEach {
                     results.add("$symbol: $it")
                 }
             }

@@ -19,7 +19,13 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Nullability
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
 class ResolveJavaTypeProcessor : AbstractTestProcessor() {
@@ -61,14 +67,18 @@ class ResolveJavaTypeProcessor : AbstractTestProcessor() {
     fun KSTypeReference.render(): String {
         val sb = StringBuilder(this.resolve().declaration.qualifiedName?.asString() ?: "<ERROR>")
         if (this.resolve().arguments.isNotEmpty()) {
-            sb.append("<${this.resolve().arguments.map {
-                when (it.variance) {
-                    Variance.STAR -> "*"
-                    Variance.INVARIANT -> ""
-                    Variance.CONTRAVARIANT -> "in "
-                    Variance.COVARIANT -> "out "
-                } + it.type?.render() 
-            }.joinToString(", ")}>")
+            sb.append(
+                "<${
+                    this.resolve().arguments.map {
+                        when (it.variance) {
+                            Variance.STAR -> "*"
+                            Variance.INVARIANT -> ""
+                            Variance.CONTRAVARIANT -> "in "
+                            Variance.COVARIANT -> "out "
+                        } + it.type?.render()
+                    }.joinToString(", ")
+                }>"
+            )
         }
         if (this.resolve().nullability != Nullability.NOT_NULL) {
             sb.append("?")

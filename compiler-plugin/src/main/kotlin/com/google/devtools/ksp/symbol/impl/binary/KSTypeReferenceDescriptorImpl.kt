@@ -19,14 +19,24 @@
 package com.google.devtools.ksp.symbol.impl.binary
 
 import com.google.devtools.ksp.ExceptionMessage
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSReferenceElement
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import org.jetbrains.kotlin.builtins.isSuspendFunctionTypeOrSubtype
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.Modifier
-import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
-import org.jetbrains.kotlin.types.*
+import org.jetbrains.kotlin.types.FlexibleType
+import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlin.types.SimpleType
+import org.jetbrains.kotlin.types.TypeUtils
 
 class KSTypeReferenceDescriptorImpl private constructor(val kotlinType: KotlinType) : KSTypeReference {
     companion object : KSObjectCache<KotlinType, KSTypeReferenceDescriptorImpl>() {
@@ -39,16 +49,23 @@ class KSTypeReferenceDescriptorImpl private constructor(val kotlinType: KotlinTy
 
     override val element: KSReferenceElement by lazy {
         when {
-            kotlinType.constructor.declarationDescriptor is ClassDescriptor -> KSClassifierReferenceDescriptorImpl.getCached(kotlinType)
+            kotlinType.constructor.declarationDescriptor is ClassDescriptor ->
+                KSClassifierReferenceDescriptorImpl.getCached(
+                    kotlinType
+                )
             kotlinType.constructor.declarationDescriptor is TypeParameterDescriptor -> {
                 val upperBound = TypeUtils.getTypeParameterDescriptorOrNull(kotlinType)!!.upperBounds.first()
                 when (upperBound) {
                     is FlexibleType -> KSClassifierReferenceDescriptorImpl.getCached(upperBound.upperBound)
                     is SimpleType -> KSClassifierReferenceDescriptorImpl.getCached(upperBound)
-                    else -> throw IllegalStateException("Unexpected upperbound type ${upperBound.javaClass}, $ExceptionMessage")
+                    else -> throw IllegalStateException(
+                        "Unexpected upperbound type ${upperBound.javaClass}, $ExceptionMessage"
+                    )
                 }
             }
-            else -> throw IllegalStateException("Unexpected type: ${kotlinType.constructor.declarationDescriptor?.javaClass}, $ExceptionMessage")
+            else -> throw IllegalStateException(
+                "Unexpected type: ${kotlinType.constructor.declarationDescriptor?.javaClass}, $ExceptionMessage"
+            )
         }
     }
 

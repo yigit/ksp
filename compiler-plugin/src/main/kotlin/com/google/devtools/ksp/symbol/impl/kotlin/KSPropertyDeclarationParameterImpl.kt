@@ -18,27 +18,28 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import com.google.devtools.ksp.isOpen
 import com.google.devtools.ksp.isPrivate
-import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
-import com.google.devtools.ksp.symbol.impl.binary.KSPropertyGetterDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.binary.KSPropertySetterDescriptorImpl
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findParentDeclaration
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertyGetterSyntheticImpl
 import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertySetterSyntheticImpl
-import org.jetbrains.kotlin.psi.KtClassOrObject
+import com.google.devtools.ksp.symbol.impl.toKSPropertyDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
-import org.jetbrains.kotlin.psi.KtStubbedPsiUtil
-import org.jetbrains.kotlin.resolve.OverridingUtil
 
 class KSPropertyDeclarationParameterImpl private constructor(val ktParameter: KtParameter) : KSPropertyDeclaration,
     KSDeclarationImpl(ktParameter),
     KSExpectActual by KSExpectActualImpl(ktParameter) {
     companion object : KSObjectCache<KtParameter, KSPropertyDeclarationParameterImpl>() {
-        fun getCached(ktParameter: KtParameter) = cache.getOrPut(ktParameter) { KSPropertyDeclarationParameterImpl(ktParameter) }
+        fun getCached(ktParameter: KtParameter) =
+            cache.getOrPut(ktParameter) { KSPropertyDeclarationParameterImpl(ktParameter) }
     }
 
     override val parentDeclaration: KSDeclaration? by lazy {

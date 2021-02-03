@@ -19,7 +19,10 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSVisitorVoid
 
 class AllFunctionsProcessor : AbstractTestProcessor() {
     val visitor = AllFunctionsVisitor()
@@ -34,7 +37,7 @@ class AllFunctionsProcessor : AbstractTestProcessor() {
 
     class AllFunctionsVisitor : KSVisitorVoid() {
         private val declarationsByClass = mutableMapOf<String, MutableList<String>>()
-        fun toResult() : List<String> {
+        fun toResult(): List<String> {
             return declarationsByClass.entries
                 .sortedBy {
                     it.key
@@ -42,17 +45,20 @@ class AllFunctionsProcessor : AbstractTestProcessor() {
                     listOf(it.key) + it.value
                 }
         }
+
         fun KSFunctionDeclaration.toSignature(): String {
             return this.simpleName.asString() +
-                    "(${this.parameters.map { 
+                "(${
+                    this.parameters.map {
                         buildString {
                             append(it.type.resolve().declaration.qualifiedName?.asString())
                             if (it.hasDefault) {
                                 append("(hasDefault)")
                             }
                         }
-                    }.joinToString(",")})" +
-                    ": ${this.returnType?.resolve()?.declaration?.qualifiedName?.asString() ?: ""}"
+                    }.joinToString(",")
+                })" +
+                ": ${this.returnType?.resolve()?.declaration?.qualifiedName?.asString() ?: ""}"
         }
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {

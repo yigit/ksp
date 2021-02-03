@@ -19,7 +19,11 @@
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
 open class TypeComposureProcessor : AbstractTestProcessor() {
@@ -31,7 +35,7 @@ open class TypeComposureProcessor : AbstractTestProcessor() {
         val references = mutableSetOf<KSTypeReference>()
 
         files.forEach {
-            it.accept(object: KSTopDownVisitor<Unit, Unit>(){
+            it.accept(object : KSTopDownVisitor<Unit, Unit>() {
                 override fun defaultHandler(node: KSNode, data: Unit) = Unit
 
                 override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {

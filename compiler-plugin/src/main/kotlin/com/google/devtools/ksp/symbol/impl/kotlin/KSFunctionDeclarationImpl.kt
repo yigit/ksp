@@ -19,20 +19,32 @@
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.ExceptionMessage
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import com.google.devtools.ksp.isOpen
-import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.*
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.FunctionKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findClosestOverridee
+import com.google.devtools.ksp.symbol.impl.getKSDeclarations
+import com.google.devtools.ksp.symbol.impl.toKSFunctionDeclaration
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.resolve.OverridingUtil
+import org.jetbrains.kotlin.psi.KtConstructor
+import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtFunctionLiteral
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
-import java.lang.IllegalStateException
 
-class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) : KSFunctionDeclaration, KSDeclarationImpl(ktFunction),
+class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) : KSFunctionDeclaration,
+    KSDeclarationImpl(ktFunction),
     KSExpectActual by KSExpectActualImpl(ktFunction) {
     companion object : KSObjectCache<KtFunction, KSFunctionDeclarationImpl>() {
         fun getCached(ktFunction: KtFunction) = cache.getOrPut(ktFunction) { KSFunctionDeclarationImpl(ktFunction) }
@@ -81,8 +93,8 @@ class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) 
 
     override val isAbstract: Boolean by lazy {
         this.modifiers.contains(Modifier.ABSTRACT) ||
-                ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-                        && !this.ktFunction.hasBody())
+            ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
+                && !this.ktFunction.hasBody())
     }
 
     override val parameters: List<KSValueParameter> by lazy {

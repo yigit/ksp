@@ -25,7 +25,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 
 @Suppress("unused") // used by tests
-class OverrideeProcessor: AbstractTestProcessor() {
+class OverrideeProcessor : AbstractTestProcessor() {
     private val results = mutableListOf<String>()
 
     override fun toResult() = results
@@ -43,7 +43,7 @@ class OverrideeProcessor: AbstractTestProcessor() {
         logSubject(resolver, "OverrideOrder2")
     }
 
-    private fun logSubject(resolver: Resolver, qName:String) {
+    private fun logSubject(resolver: Resolver, qName: String) {
         results.add("$qName:")
         val subject = resolver.getClassDeclarationByName(qName)!!
         subject.declarations.filterIsInstance<KSClassDeclaration>().forEach {
@@ -98,7 +98,10 @@ class OverrideeProcessor: AbstractTestProcessor() {
 }
 
 interface MyInterface {
-    fun openFoo(): Int { return 1}
+    fun openFoo(): Int {
+        return 1
+    }
+
     fun absFoo(): Unit
 }
 
@@ -106,11 +109,16 @@ interface MyInterface2 {
     fun absFoo(): Unit
 }
 
-abstract class MyAbstract: MyInterface {
-    override fun absFoo(): Unit {val a = 1}
-    override fun openFoo(): Int { return 2 }
+abstract class MyAbstract : MyInterface {
+    override fun absFoo(): Unit {
+        val a = 1
+    }
+
+    override fun openFoo(): Int {
+        return 2
+    }
 }
 
-class Subject2: MyInterface, MyAbstract() {
+class Subject2 : MyInterface, MyAbstract() {
     override fun absFoo(): Unit = TODO()
 }

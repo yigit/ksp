@@ -18,12 +18,13 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSExpectActual
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSTypeAlias
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSVisitor
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import com.google.devtools.ksp.symbol.impl.findParentDeclaration
-import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import com.google.devtools.ksp.symbol.impl.toLocation
-import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.KtTypeAlias
 
 class KSTypeAliasImpl private constructor(val ktTypeAlias: KtTypeAlias) : KSTypeAlias, KSDeclarationImpl(ktTypeAlias),
     KSExpectActual by KSExpectActualImpl(ktTypeAlias) {

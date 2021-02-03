@@ -25,7 +25,12 @@ import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
-import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
+import org.jetbrains.kotlin.descriptors.MemberDescriptor
+import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
@@ -35,7 +40,8 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
     KSDeclarationDescriptorImpl(descriptor),
     KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
     companion object : KSObjectCache<ClassDescriptor, KSClassDeclarationDescriptorImpl>() {
-        fun getCached(descriptor: ClassDescriptor) = cache.getOrPut(descriptor) { KSClassDeclarationDescriptorImpl(descriptor) }
+        fun getCached(descriptor: ClassDescriptor) =
+            cache.getOrPut(descriptor) { KSClassDeclarationDescriptorImpl(descriptor) }
     }
 
     override val classKind: ClassKind by lazy {
@@ -85,9 +91,9 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
         ).flatten()
             .filter {
                 it is MemberDescriptor
-                        && it.visibility != DescriptorVisibilities.INHERITED
-                        && it.visibility != DescriptorVisibilities.INVISIBLE_FAKE
-                        && (it !is CallableMemberDescriptor || it.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
+                    && it.visibility != DescriptorVisibilities.INHERITED
+                    && it.visibility != DescriptorVisibilities.INVISIBLE_FAKE
+                    && (it !is CallableMemberDescriptor || it.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
             }
             .map {
                 when (it) {
@@ -132,7 +138,7 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
 internal fun ClassDescriptor.getAllFunctions(): List<KSFunctionDeclaration> {
     ResolverImpl.instance.incrementalContext.recordLookupForGetAllFunctions(this)
     val functionDescriptors = unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS).toList()
-            .filter { (it as FunctionDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }.toMutableList()
+        .filter { (it as FunctionDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }.toMutableList()
     functionDescriptors += constructors
     return functionDescriptors.map { KSFunctionDeclarationDescriptorImpl.getCached(it as FunctionDescriptor) }
 }
@@ -140,6 +146,6 @@ internal fun ClassDescriptor.getAllFunctions(): List<KSFunctionDeclaration> {
 internal fun ClassDescriptor.getAllProperties(): List<KSPropertyDeclaration> {
     ResolverImpl.instance.incrementalContext.recordLookupForGetAllProperties(this)
     return unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.VARIABLES).toList()
-            .filter { (it as PropertyDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }
-            .map { KSPropertyDeclarationDescriptorImpl.getCached(it as PropertyDescriptor) }
+        .filter { (it as PropertyDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }
+        .map { KSPropertyDeclarationDescriptorImpl.getCached(it as PropertyDescriptor) }
 }

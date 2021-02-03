@@ -18,12 +18,20 @@
 
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSValueArgument
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
 
-class KSValueArgumentLiteImpl private constructor(override val name: KSName, override val value: Any?) : KSValueArgumentImpl() {
+class KSValueArgumentLiteImpl private constructor(override val name: KSName, override val value: Any?) :
+    KSValueArgumentImpl() {
     companion object : KSObjectCache<Pair<KSName, Any?>, KSValueArgumentLiteImpl>() {
-        fun getCached(name: KSName, value: Any?) = cache.getOrPut(Pair(name, value)) { KSValueArgumentLiteImpl(name, value) }
+        fun getCached(name: KSName, value: Any?) =
+            cache.getOrPut(Pair(name, value)) { KSValueArgumentLiteImpl(name, value) }
     }
 
     override val origin = Origin.KOTLIN

@@ -19,27 +19,45 @@
 package com.google.devtools.ksp.symbol.impl.binary
 
 import com.google.devtools.ksp.ExceptionMessage
+import com.google.devtools.ksp.processing.impl.ResolverImpl
+import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueArgument
+import com.google.devtools.ksp.symbol.KSVisitor
+import com.google.devtools.ksp.symbol.Location
+import com.google.devtools.ksp.symbol.NonExistLocation
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import com.google.devtools.ksp.symbol.impl.findPsi
+import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.KSValueArgumentLiteImpl
+import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiAnnotationMethod
 import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
-import com.google.devtools.ksp.processing.impl.ResolverImpl
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.KSObjectCache
-import com.google.devtools.ksp.symbol.impl.findPsi
-import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSValueArgumentLiteImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.resolve.calls.components.hasDefaultValue
-import org.jetbrains.kotlin.resolve.constants.*
+import org.jetbrains.kotlin.resolve.constants.AnnotationValue
+import org.jetbrains.kotlin.resolve.constants.ArrayValue
+import org.jetbrains.kotlin.resolve.constants.ConstantValue
+import org.jetbrains.kotlin.resolve.constants.EnumValue
+import org.jetbrains.kotlin.resolve.constants.ErrorValue
+import org.jetbrains.kotlin.resolve.constants.KClassValue
+import org.jetbrains.kotlin.resolve.constants.NullValue
 
 class KSAnnotationDescriptorImpl private constructor(val descriptor: AnnotationDescriptor) : KSAnnotation {
     companion object : KSObjectCache<AnnotationDescriptor, KSAnnotationDescriptorImpl>() {
-        fun getCached(descriptor: AnnotationDescriptor) = cache.getOrPut(descriptor) { KSAnnotationDescriptorImpl(descriptor) }
+        fun getCached(descriptor: AnnotationDescriptor) =
+            cache.getOrPut(descriptor) { KSAnnotationDescriptorImpl(descriptor) }
     }
 
     override val origin = Origin.CLASS
@@ -80,8 +98,12 @@ private fun <T> ConstantValue<T>.toValue(): Any? = when (this) {
     is AnnotationValue -> KSAnnotationDescriptorImpl.getCached(value)
     is ArrayValue -> value.map { it.toValue() }
     is EnumValue -> value.first.findKSClassDeclaration()?.declarations?.find {
-        it is KSClassDeclaration && it.classKind == ClassKind.ENUM_ENTRY && it.simpleName.asString() == value.second.asString()
-    }?.let { (it as KSClassDeclaration).asStarProjectedType() }
+        it is KSClassDeclaration &&
+            it.classKind == ClassKind.ENUM_ENTRY &&
+            it.simpleName.asString() == value.second.asString()
+    }?.let {
+        (it as KSClassDeclaration).asStarProjectedType()
+    }
     is KClassValue -> when (val classValue = value) {
         is KClassValue.Value.NormalClass -> classValue.classId.findKSType()
         is KClassValue.Value.LocalClass -> getKSTypeCached(classValue.type)
@@ -98,20 +120,24 @@ fun AnnotationDescriptor.createKSValueArguments(): List<KSValueArgument> {
         )
     }
     val presentValueArgumentNames = presentValueArguments.map { it.name.asString() }
-    val argumentsFromDefault = (this.type.constructor.declarationDescriptor as? ClassDescriptor)?.constructors?.single()?.let {
-        it.getAbsentDefaultArguments(presentValueArgumentNames)
-    } ?: emptyList()
+    val argumentsFromDefault =
+        (this.type.constructor.declarationDescriptor as? ClassDescriptor)?.constructors?.single()?.let {
+            it.getAbsentDefaultArguments(presentValueArgumentNames)
+        } ?: emptyList()
     return presentValueArguments.plus(argumentsFromDefault)
 }
 
-fun ClassConstructorDescriptor.getAbsentDefaultArguments(excludeNames: Collection<String>): Collection<KSValueArgument> {
-    return this.valueParameters.filterNot { param -> excludeNames.contains(param.name.asString()) || !param.hasDefaultValue() }
-        .map { param ->
-            KSValueArgumentLiteImpl.getCached(
-                KSNameImpl.getCached(param.name.asString()),
-                param.getDefaultValue()
-            )
-        }
+fun ClassConstructorDescriptor.getAbsentDefaultArguments(
+    excludeNames: Collection<String>
+): Collection<KSValueArgument> {
+    return this.valueParameters.filterNot { param ->
+        excludeNames.contains(param.name.asString()) || !param.hasDefaultValue()
+    }.map { param ->
+        KSValueArgumentLiteImpl.getCached(
+            KSNameImpl.getCached(param.name.asString()),
+            param.getDefaultValue()
+        )
+    }
 }
 
 fun ValueParameterDescriptor.getDefaultValue(): Any? {
@@ -119,10 +145,14 @@ fun ValueParameterDescriptor.getDefaultValue(): Any? {
     return when (psi) {
         null -> {
             // TODO: This will only work for symbols from Java class.
-            ResolverImpl.instance.javaActualAnnotationArgumentExtractor.extractDefaultValue(this, this.type)?.toValue()
+            ResolverImpl.instance.javaActualAnnotationArgumentExtractor
+                .extractDefaultValue(this, this.type)?.toValue()
         }
         is KtParameter -> ResolverImpl.instance.evaluateConstant(psi.defaultValue, this.type)?.value
-        is PsiAnnotationMethod -> JavaPsiFacade.getInstance(psi.project).constantEvaluationHelper.computeConstantExpression((psi).defaultValue)
+        is PsiAnnotationMethod -> JavaPsiFacade.getInstance(psi.project).constantEvaluationHelper
+            .computeConstantExpression(
+                (psi).defaultValue
+            )
         else -> throw IllegalStateException("Unexpected psi ${psi.javaClass}, $ExceptionMessage")
     }
 }
