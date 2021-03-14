@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.getClassDeclarationByName
@@ -47,16 +46,16 @@ class CheckOverrideProcessor : AbstractTestProcessor() {
         val baz2PropKt = resolver.getSymbolsWithAnnotation("Baz2Anno").single() as KSPropertyDeclaration
         val bazzPropKt = resolver.getSymbolsWithAnnotation("BazzAnno").single() as KSPropertyDeclaration
         val bazz2PropKt = resolver.getSymbolsWithAnnotation("Bazz2Anno").single() as KSPropertyDeclaration
-        checkOverride(getFunKt,getFunJava)
-        checkOverride(fooFunKt,fooFunJava)
-        checkOverride(foooFunKt,fooFunJava)
-        checkOverride(fooFunKt,fooFunKt)
-        checkOverride(equalFunKt,equalFunJava)
-        checkOverride(bazPropKt,baz2PropKt)
-        checkOverride(bazPropKt,bazz2PropKt)
-        checkOverride(bazzPropKt,bazz2PropKt)
-        checkOverride(bazzPropKt,baz2PropKt)
-        checkOverride(bazPropKt,bazPropKt)
+        checkOverride(getFunKt, getFunJava)
+        checkOverride(fooFunKt, fooFunJava)
+        checkOverride(foooFunKt, fooFunJava)
+        checkOverride(fooFunKt, fooFunKt)
+        checkOverride(equalFunKt, equalFunJava)
+        checkOverride(bazPropKt, baz2PropKt)
+        checkOverride(bazPropKt, bazz2PropKt)
+        checkOverride(bazzPropKt, bazz2PropKt)
+        checkOverride(bazzPropKt, baz2PropKt)
+        checkOverride(bazPropKt, bazPropKt)
         val JavaImpl = resolver.getClassDeclarationByName("JavaImpl")!!
         val MyInterface = resolver.getClassDeclarationByName("MyInterface")!!
         val MyInterface2 = resolver.getClassDeclarationByName("MyInterface2")!!
@@ -66,8 +65,8 @@ class CheckOverrideProcessor : AbstractTestProcessor() {
         val getY = JavaImpl.getDeclaredFunctions().first { it.simpleName.asString() == "getY" }
         val setY = JavaImpl.getDeclaredFunctions().first { it.simpleName.asString() == "setY" }
         val setX = JavaImpl.getDeclaredFunctions().first { it.simpleName.asString() == "setX" }
-        val myInterfaceX = MyInterface.declarations.first{ it.simpleName.asString() == "x" }
-        val myInterfaceY = MyInterface.declarations.first{ it.simpleName.asString() == "y" }
+        val myInterfaceX = MyInterface.declarations.first { it.simpleName.asString() == "x" }
+        val myInterfaceY = MyInterface.declarations.first { it.simpleName.asString() == "y" }
         val myInterface2receiveList = MyInterface2.declarations.single()
         val myInterface2ImplWithoutTypereceiveList = MyInterface2ImplWithoutType.declarations.single()
         val myInterface2ImplWithTypereceiveList = MyInterface2ImplWithType.declarations.single()

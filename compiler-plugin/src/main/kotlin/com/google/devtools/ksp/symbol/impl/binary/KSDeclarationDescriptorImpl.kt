@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.binary
 
+import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.descriptorUtil.parents
 
@@ -63,5 +62,4 @@ abstract class KSDeclarationDescriptorImpl(descriptor: DeclarationDescriptor) : 
     override fun toString(): String {
         return this.simpleName.asString()
     }
-
 }

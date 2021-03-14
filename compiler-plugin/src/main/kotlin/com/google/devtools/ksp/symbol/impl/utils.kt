@@ -15,13 +15,9 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl
 
 import com.google.devtools.ksp.ExceptionMessage
-import com.intellij.lang.jvm.JvmModifier
-import com.intellij.psi.*
-import org.jetbrains.kotlin.descriptors.*
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.ClassKind
@@ -33,11 +29,14 @@ import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSTypeArgumentJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.*
+import com.intellij.lang.jvm.JvmModifier
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassImpl
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.JavaDescriptorVisibilities
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassConstructorDescriptor
-import org.jetbrains.kotlin.load.java.structure.JavaMember
+import org.jetbrains.kotlin.load.java.lazy.ModuleClassResolver
 import org.jetbrains.kotlin.load.java.structure.impl.JavaConstructorImpl
 import org.jetbrains.kotlin.load.java.structure.impl.JavaMethodImpl
 import org.jetbrains.kotlin.psi.*
@@ -47,7 +46,6 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.StarProjectionImpl
 import org.jetbrains.kotlin.types.TypeProjectionImpl
 import org.jetbrains.kotlin.types.replace
-import org.jetbrains.kotlin.load.java.lazy.ModuleClassResolver
 
 private val jvmModifierMap = mapOf(
     JvmModifier.PUBLIC to Modifier.PUBLIC,
@@ -64,34 +62,34 @@ private val jvmModifierMap = mapOf(
 )
 
 private val modifierMap = mapOf(
-        KtTokens.PUBLIC_KEYWORD to Modifier.PUBLIC,
-        KtTokens.PRIVATE_KEYWORD to Modifier.PRIVATE,
-        KtTokens.INTERNAL_KEYWORD to Modifier.INTERNAL,
-        KtTokens.PROTECTED_KEYWORD to Modifier.PROTECTED,
-        KtTokens.IN_KEYWORD to Modifier.IN,
-        KtTokens.OUT_KEYWORD to Modifier.OUT,
-        KtTokens.OVERRIDE_KEYWORD to Modifier.OVERRIDE,
-        KtTokens.LATEINIT_KEYWORD to Modifier.LATEINIT,
-        KtTokens.ENUM_KEYWORD to Modifier.ENUM,
-        KtTokens.SEALED_KEYWORD to Modifier.SEALED,
-        KtTokens.ANNOTATION_KEYWORD to Modifier.ANNOTATION,
-        KtTokens.DATA_KEYWORD to Modifier.DATA,
-        KtTokens.INNER_KEYWORD to Modifier.INNER,
-        KtTokens.SUSPEND_KEYWORD to Modifier.SUSPEND,
-        KtTokens.TAILREC_KEYWORD to Modifier.TAILREC,
-        KtTokens.OPERATOR_KEYWORD to Modifier.OPERATOR,
-        KtTokens.INFIX_KEYWORD to Modifier.INFIX,
-        KtTokens.INLINE_KEYWORD to Modifier.INLINE,
-        KtTokens.EXTERNAL_KEYWORD to Modifier.EXTERNAL,
-        KtTokens.ABSTRACT_KEYWORD to Modifier.ABSTRACT,
-        KtTokens.FINAL_KEYWORD to Modifier.FINAL,
-        KtTokens.OPEN_KEYWORD to Modifier.OPEN,
-        KtTokens.VARARG_KEYWORD to Modifier.VARARG,
-        KtTokens.NOINLINE_KEYWORD to Modifier.NOINLINE,
-        KtTokens.CROSSINLINE_KEYWORD to Modifier.CROSSINLINE,
-        KtTokens.REIFIED_KEYWORD to Modifier.REIFIED,
-        KtTokens.EXPECT_KEYWORD to Modifier.EXPECT,
-        KtTokens.ACTUAL_KEYWORD to Modifier.ACTUAL
+    KtTokens.PUBLIC_KEYWORD to Modifier.PUBLIC,
+    KtTokens.PRIVATE_KEYWORD to Modifier.PRIVATE,
+    KtTokens.INTERNAL_KEYWORD to Modifier.INTERNAL,
+    KtTokens.PROTECTED_KEYWORD to Modifier.PROTECTED,
+    KtTokens.IN_KEYWORD to Modifier.IN,
+    KtTokens.OUT_KEYWORD to Modifier.OUT,
+    KtTokens.OVERRIDE_KEYWORD to Modifier.OVERRIDE,
+    KtTokens.LATEINIT_KEYWORD to Modifier.LATEINIT,
+    KtTokens.ENUM_KEYWORD to Modifier.ENUM,
+    KtTokens.SEALED_KEYWORD to Modifier.SEALED,
+    KtTokens.ANNOTATION_KEYWORD to Modifier.ANNOTATION,
+    KtTokens.DATA_KEYWORD to Modifier.DATA,
+    KtTokens.INNER_KEYWORD to Modifier.INNER,
+    KtTokens.SUSPEND_KEYWORD to Modifier.SUSPEND,
+    KtTokens.TAILREC_KEYWORD to Modifier.TAILREC,
+    KtTokens.OPERATOR_KEYWORD to Modifier.OPERATOR,
+    KtTokens.INFIX_KEYWORD to Modifier.INFIX,
+    KtTokens.INLINE_KEYWORD to Modifier.INLINE,
+    KtTokens.EXTERNAL_KEYWORD to Modifier.EXTERNAL,
+    KtTokens.ABSTRACT_KEYWORD to Modifier.ABSTRACT,
+    KtTokens.FINAL_KEYWORD to Modifier.FINAL,
+    KtTokens.OPEN_KEYWORD to Modifier.OPEN,
+    KtTokens.VARARG_KEYWORD to Modifier.VARARG,
+    KtTokens.NOINLINE_KEYWORD to Modifier.NOINLINE,
+    KtTokens.CROSSINLINE_KEYWORD to Modifier.CROSSINLINE,
+    KtTokens.REIFIED_KEYWORD to Modifier.REIFIED,
+    KtTokens.EXPECT_KEYWORD to Modifier.EXPECT,
+    KtTokens.ACTUAL_KEYWORD to Modifier.ACTUAL
 )
 
 fun KtModifierListOwner.toKSModifiers(): Set<Modifier> {
@@ -242,22 +240,24 @@ fun org.jetbrains.kotlin.types.Variance.toKSVariance(): Variance {
 fun KSTypeReference.toKotlinType() = (resolve() as KSTypeImpl).kotlinType
 
 internal fun KotlinType.replaceTypeArguments(newArguments: List<KSTypeArgument>): KotlinType =
-    replace(newArguments.mapIndexed { index, ksTypeArgument ->
-        val variance = when (ksTypeArgument.variance) {
-            Variance.INVARIANT -> org.jetbrains.kotlin.types.Variance.INVARIANT
-            Variance.COVARIANT -> org.jetbrains.kotlin.types.Variance.OUT_VARIANCE
-            Variance.CONTRAVARIANT -> org.jetbrains.kotlin.types.Variance.IN_VARIANCE
-            Variance.STAR -> return@mapIndexed StarProjectionImpl(constructor.parameters[index])
+    replace(
+        newArguments.mapIndexed { index, ksTypeArgument ->
+            val variance = when (ksTypeArgument.variance) {
+                Variance.INVARIANT -> org.jetbrains.kotlin.types.Variance.INVARIANT
+                Variance.COVARIANT -> org.jetbrains.kotlin.types.Variance.OUT_VARIANCE
+                Variance.CONTRAVARIANT -> org.jetbrains.kotlin.types.Variance.IN_VARIANCE
+                Variance.STAR -> return@mapIndexed StarProjectionImpl(constructor.parameters[index])
+            }
+
+            val type = when (ksTypeArgument) {
+                is KSTypeArgumentKtImpl, is KSTypeArgumentJavaImpl, is KSTypeArgumentLiteImpl -> ksTypeArgument.type!!
+                is KSTypeArgumentDescriptorImpl -> return@mapIndexed ksTypeArgument.descriptor
+                else -> throw IllegalStateException("Unexpected psi for type argument: ${ksTypeArgument.javaClass}, $ExceptionMessage")
+            }.toKotlinType()
+
+            TypeProjectionImpl(variance, type)
         }
-
-        val type = when (ksTypeArgument) {
-            is KSTypeArgumentKtImpl, is KSTypeArgumentJavaImpl, is KSTypeArgumentLiteImpl -> ksTypeArgument.type!!
-            is KSTypeArgumentDescriptorImpl -> return@mapIndexed ksTypeArgument.descriptor
-            else -> throw IllegalStateException("Unexpected psi for type argument: ${ksTypeArgument.javaClass}, $ExceptionMessage")
-        }.toKotlinType()
-
-        TypeProjectionImpl(variance, type)
-    })
+    )
 
 internal fun FunctionDescriptor.toKSFunctionDeclaration(): KSFunctionDeclaration {
     if (this.kind != CallableMemberDescriptor.Kind.DECLARATION) return KSFunctionDeclarationDescriptorImpl.getCached(this)

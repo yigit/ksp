@@ -1,7 +1,6 @@
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
-import java.io.File
 import java.io.OutputStream
 
 fun OutputStream.appendText(str: String) {
@@ -11,7 +10,12 @@ class BuilderProcessor : SymbolProcessor {
     lateinit var codeGenerator: CodeGenerator
     lateinit var logger: KSPLogger
 
-    override fun init(options: Map<String, String>, kotlinVersion: KotlinVersion, codeGenerator: CodeGenerator, logger: KSPLogger) {
+    override fun init(
+        options: Map<String, String>,
+        kotlinVersion: KotlinVersion,
+        codeGenerator: CodeGenerator,
+        logger: KSPLogger
+    ) {
         this.codeGenerator = codeGenerator
         this.logger = logger
     }
@@ -34,7 +38,7 @@ class BuilderProcessor : SymbolProcessor {
             val parent = function.parentDeclaration as KSClassDeclaration
             val packageName = parent.containingFile!!.packageName.asString()
             val className = "${parent.simpleName.asString()}Builder"
-            val file = codeGenerator.createNewFile(Dependencies(true, function.containingFile!!), packageName , className)
+            val file = codeGenerator.createNewFile(Dependencies(true, function.containingFile!!), packageName, className)
             file.appendText("package $packageName\n\n")
             file.appendText("import HELLO\n\n")
             file.appendText("class $className{\n")
@@ -45,11 +49,11 @@ class BuilderProcessor : SymbolProcessor {
                 if (it.type.element!!.typeArguments.isNotEmpty()) {
                     typeName.append("<")
                     typeName.append(
-                            typeArgs.map {
-                                val type = it.type?.resolve()
-                                "${it.variance.label} ${type?.declaration?.qualifiedName?.asString() ?: "ERROR"}" +
-                                        if (type?.nullability == Nullability.NULLABLE) "?" else ""
-                            }.joinToString(", ")
+                        typeArgs.map {
+                            val type = it.type?.resolve()
+                            "${it.variance.label} ${type?.declaration?.qualifiedName?.asString() ?: "ERROR"}" +
+                                if (type?.nullability == Nullability.NULLABLE) "?" else ""
+                        }.joinToString(", ")
                     )
                     typeName.append(">")
                 }
@@ -72,5 +76,4 @@ class BuilderProcessor : SymbolProcessor {
             file.close()
         }
     }
-
 }

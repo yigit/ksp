@@ -15,18 +15,13 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.kotlin
 
-import com.google.devtools.ksp.isLocal
-import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.*
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertyGetterDescriptorImpl
 import com.google.devtools.ksp.symbol.impl.binary.KSPropertySetterDescriptorImpl
-import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertyGetterSyntheticImpl
-import com.google.devtools.ksp.symbol.impl.synthetic.KSPropertySetterSyntheticImpl
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.descriptors.VariableDescriptorWithAccessors
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
@@ -35,7 +30,9 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 
-class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) : KSPropertyDeclaration, KSDeclarationImpl(ktProperty),
+class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) :
+    KSPropertyDeclaration,
+    KSDeclarationImpl(ktProperty),
     KSExpectActual by KSExpectActualImpl(ktProperty) {
     companion object : KSObjectCache<KtProperty, KSPropertyDeclarationImpl>() {
         fun getCached(ktProperty: KtProperty) = cache.getOrPut(ktProperty) { KSPropertyDeclarationImpl(ktProperty) }
@@ -67,7 +64,6 @@ class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) 
         } ?: propertyDescriptor?.getter?.let {
             KSPropertyGetterDescriptorImpl.getCached(it)
         }
-
     }
 
     override val setter: KSPropertySetter? by lazy {
@@ -76,7 +72,6 @@ class KSPropertyDeclarationImpl private constructor(val ktProperty: KtProperty) 
         } ?: propertyDescriptor?.setter?.let {
             KSPropertySetterDescriptorImpl.getCached(it)
         }
-
     }
 
     override val type: KSTypeReference by lazy {

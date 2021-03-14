@@ -1,7 +1,7 @@
 package com.example
 
-import com.example.annotation.Builder
 import HELLO
+import com.example.annotation.Builder
 
 @Builder
 class AClass(private val a: Int, val b: String, val c: Double, val d: HELLO) {

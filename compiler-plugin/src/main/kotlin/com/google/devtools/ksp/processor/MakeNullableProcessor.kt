@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
-open class MakeNullableProcessor: AbstractTestProcessor() {
+open class MakeNullableProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
     val typeCollector = TypeCollector()
     val types = mutableSetOf<KSType>()
@@ -47,5 +46,4 @@ open class MakeNullableProcessor: AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
@@ -50,4 +49,3 @@ class HelloProcessor : AbstractTestProcessor() {
         }
     }
 }
-

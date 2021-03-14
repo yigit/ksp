@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processing
 
 import com.google.devtools.ksp.symbol.*
@@ -80,7 +79,11 @@ interface CodeGenerator {
 /**
  * Dependencies of an output file.
  */
-class Dependencies private constructor(val isAllSources: Boolean, val aggregating: Boolean, val originatingFiles: List<KSFile>) {
+class Dependencies private constructor(
+    val isAllSources: Boolean,
+    val aggregating: Boolean,
+    val originatingFiles: List<KSFile>
+) {
 
     /**
      * Create a [Dependencies] to associate with an output.

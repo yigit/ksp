@@ -1,6 +1,5 @@
 package com.google.devtools.ksp.visitor
 
-import com.google.devtools.ksp.ExceptionMessage
 import com.google.devtools.ksp.symbol.*
 
 class KSValidateVisitor(private val predicate: (KSNode?, KSNode) -> Boolean) : KSDefaultVisitor<KSNode?, Boolean>() {
@@ -27,11 +26,11 @@ class KSValidateVisitor(private val predicate: (KSNode?, KSNode) -> Boolean) : K
     }
 
     override fun visitTypeParameter(typeParameter: KSTypeParameter, data: KSNode?): Boolean {
-        return !predicate(data, typeParameter) || typeParameter.bounds.all{ it.accept(this, typeParameter) }
+        return !predicate(data, typeParameter) || typeParameter.bounds.all { it.accept(this, typeParameter) }
     }
 
     override fun visitAnnotated(annotated: KSAnnotated, data: KSNode?): Boolean {
-        return !predicate(data, annotated) || annotated.annotations.all{ it.accept(this, annotated) }
+        return !predicate(data, annotated) || annotated.annotations.all { it.accept(this, annotated) }
     }
 
     override fun visitAnnotation(annotation: KSAnnotation, data: KSNode?): Boolean {
@@ -46,7 +45,7 @@ class KSValidateVisitor(private val predicate: (KSNode?, KSNode) -> Boolean) : K
         if (classDeclaration.asStarProjectedType().isError) {
             return false
         }
-        if (!classDeclaration.superTypes.all{ it.accept(this, classDeclaration) }) {
+        if (!classDeclaration.superTypes.all { it.accept(this, classDeclaration) }) {
             return false
         }
         if (!this.visitDeclaration(classDeclaration, data)) {
@@ -62,7 +61,7 @@ class KSValidateVisitor(private val predicate: (KSNode?, KSNode) -> Boolean) : K
         if (function.returnType != null && !(predicate(function, function.returnType!!) && function.returnType!!.accept(this, data))) {
             return false
         }
-        if (!function.parameters.all{ it.accept(this, function) }) {
+        if (!function.parameters.all { it.accept(this, function) }) {
             return false
         }
         if (!this.visitDeclaration(function, data)) {

@@ -15,19 +15,8 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.StandardFileSystems
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.psi.PsiJavaFile
-import com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.analyzer.AnalysisResult
-import org.jetbrains.kotlin.cli.jvm.plugins.ServiceLoaderLite
-import org.jetbrains.kotlin.container.ComponentProvider
-import org.jetbrains.kotlin.context.ProjectContext
-import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.impl.CodeGeneratorImpl
@@ -38,7 +27,17 @@ import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCacheManager
 import com.google.devtools.ksp.symbol.impl.java.KSFileJavaImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSFileImpl
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.StandardFileSystems
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.psi.PsiJavaFile
+import com.intellij.psi.PsiManager
+import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.jvm.plugins.ServiceLoaderLite
+import org.jetbrains.kotlin.container.ComponentProvider
+import org.jetbrains.kotlin.context.ProjectContext
+import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
@@ -68,7 +67,11 @@ class KotlinSymbolProcessingExtension(
     }
 }
 
-abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, val logger: KSPLogger, val testMode: Boolean) :
+abstract class AbstractKotlinSymbolProcessingExtension(
+    val options: KspOptions,
+    val logger: KSPLogger,
+    val testMode: Boolean
+) :
     AnalysisHandlerExtension {
     var initialized = false
     var finished = false
@@ -112,8 +115,8 @@ abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, 
 
         if (!initialized) {
             incrementalContext = IncrementalContext(
-                    options, componentProvider,
-                    File(anyChangesWildcard.filePath).relativeTo(options.projectBaseDir)
+                options, componentProvider,
+                File(anyChangesWildcard.filePath).relativeTo(options.projectBaseDir)
             )
             dirtyFiles = incrementalContext.calcDirtyFiles(ksFiles).toSet()
             cleanFilenames = ksFiles.filterNot { it in dirtyFiles }.map { it.filePath }.toSet()
@@ -126,13 +129,13 @@ abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, 
         val processors = loadProcessors()
         if (!initialized) {
             codeGenerator = CodeGeneratorImpl(
-                    options.classOutputDir,
-                    options.javaOutputDir,
-                    options.kotlinOutputDir,
-                    options.resourceOutputDir,
-                    options.projectBaseDir,
-                    anyChangesWildcard,
-                    ksFiles
+                options.classOutputDir,
+                options.javaOutputDir,
+                options.kotlinOutputDir,
+                options.resourceOutputDir,
+                options.projectBaseDir,
+                anyChangesWildcard,
+                ksFiles
             )
             processors.forEach init@{ processor ->
                 handleException {
@@ -160,9 +163,9 @@ abstract class AbstractKotlinSymbolProcessingExtension(val options: KspOptions, 
         }
         // Post processing.
         val newKtFiles = codeGenerator.generatedFile.filter { it.extension == "kt" }
-                .mapNotNull { localFileSystem.findFileByPath(it.canonicalPath)?.let { psiManager.findFile(it) } as? KtFile }
+            .mapNotNull { localFileSystem.findFileByPath(it.canonicalPath)?.let { psiManager.findFile(it) } as? KtFile }
         val newJavaFiles = codeGenerator.generatedFile.filter { it.extension == "java" }
-                .mapNotNull { localFileSystem.findFileByPath(it.canonicalPath)?.let { psiManager.findFile(it) } as? PsiJavaFile}
+            .mapNotNull { localFileSystem.findFileByPath(it.canonicalPath)?.let { psiManager.findFile(it) } as? PsiJavaFile }
         newFiles = newKtFiles.map { KSFileImpl.getCached(it) } + newJavaFiles.map { KSFileJavaImpl.getCached(it) }
         if (codeGenerator.generatedFile.isEmpty()) {
             finished = true

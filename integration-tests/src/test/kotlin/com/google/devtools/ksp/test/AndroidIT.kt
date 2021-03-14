@@ -5,7 +5,6 @@ import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.util.jar.*
 
 class AndroidIT {

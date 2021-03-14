@@ -1,9 +1,6 @@
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.validate
-import java.io.File
 import java.io.OutputStream
-
 
 class TestProcessor : SymbolProcessor {
     lateinit var codeGenerator: CodeGenerator
@@ -14,7 +11,12 @@ class TestProcessor : SymbolProcessor {
         file.appendText("$indent$s\n")
     }
 
-    override fun init(options: Map<String, String>, kotlinVersion: KotlinVersion, codeGenerator: CodeGenerator, logger: KSPLogger) {
+    override fun init(
+        options: Map<String, String>,
+        kotlinVersion: KotlinVersion,
+        codeGenerator: CodeGenerator,
+        logger: KSPLogger
+    ) {
         this.codeGenerator = codeGenerator
         file = codeGenerator.createNewFile(Dependencies(false), "", "TestProcessor", "log")
         emit("TestProcessor: init($options)", "")
@@ -76,7 +78,7 @@ class TestProcessor : SymbolProcessor {
 
         private fun invokeCommonDeclarationApis(declaration: KSDeclaration, indent: String) {
             emit(
-              "${declaration.modifiers.joinToString(" ")} ${declaration.simpleName.asString()}", indent
+                "${declaration.modifiers.joinToString(" ")} ${declaration.simpleName.asString()}", indent
             )
             declaration.annotations.map { it.accept(this, "$indent  ") }
             if (declaration.parentDeclaration != null)
@@ -90,7 +92,7 @@ class TestProcessor : SymbolProcessor {
 //                return
 //            }
             if (checkVisited(file)) return
-            file.annotations.map{ it.accept(this, "$data  ") }
+            file.annotations.map { it.accept(this, "$data  ") }
             emit(file.packageName.asString(), data)
             for (declaration in file.declarations) {
                 declaration.accept(this, data)
@@ -130,30 +132,32 @@ class TestProcessor : SymbolProcessor {
 
         override fun visitTypeArgument(typeArgument: KSTypeArgument, data: String) {
             if (checkVisited(typeArgument)) return
-            typeArgument.annotations.map{ it.accept(this, "$data  ") }
+            typeArgument.annotations.map { it.accept(this, "$data  ") }
             emit(
-              when (typeArgument.variance) {
-                  Variance.STAR -> "*"
-                  Variance.COVARIANT -> "out"
-                  Variance.CONTRAVARIANT -> "in"
-                  else -> ""
-              }, data
+                when (typeArgument.variance) {
+                    Variance.STAR -> "*"
+                    Variance.COVARIANT -> "out"
+                    Variance.CONTRAVARIANT -> "in"
+                    else -> ""
+                },
+                data
             )
             typeArgument.type?.accept(this, "$data  ")
         }
 
         override fun visitTypeParameter(typeParameter: KSTypeParameter, data: String) {
             if (checkVisited(typeParameter)) return
-            typeParameter.annotations.map{ it.accept(this, "$data  ") }
+            typeParameter.annotations.map { it.accept(this, "$data  ") }
             if (typeParameter.isReified) {
                 emit("reified ", data)
             }
             emit(
-              when (typeParameter.variance) {
-                  Variance.COVARIANT -> "out "
-                  Variance.CONTRAVARIANT -> "in "
-                  else -> ""
-              } + typeParameter.name.asString(), data
+                when (typeParameter.variance) {
+                    Variance.COVARIANT -> "out "
+                    Variance.CONTRAVARIANT -> "in "
+                    else -> ""
+                } + typeParameter.name.asString(),
+                data
             )
             if (typeParameter.bounds.isNotEmpty()) {
                 typeParameter.bounds.map { it.accept(this, "$data  ") }
@@ -211,12 +215,12 @@ class TestProcessor : SymbolProcessor {
 
         override fun visitTypeReference(typeReference: KSTypeReference, data: String) {
             if (checkVisited(typeReference)) return
-            typeReference.annotations.map{ it.accept(this, "$data  ") }
+            typeReference.annotations.map { it.accept(this, "$data  ") }
             val type = typeReference.resolve()
             type.let {
                 emit("resolved to: ${it.declaration.qualifiedName?.asString()}", data)
             }
-            //resolved.accept(this, "$data  ")
+            // resolved.accept(this, "$data  ")
             // TODO: KSTypeReferenceJavaImpl hasn't completed yet.
             try {
                 typeReference.element?.accept(this, "$data  ")
@@ -254,7 +258,4 @@ class TestProcessor : SymbolProcessor {
             valueArgument.annotations.map { it.accept(this, "$data  ") }
         }
     }
-
 }
-
-

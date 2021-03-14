@@ -15,15 +15,9 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.java
 
 import com.google.devtools.ksp.isConstructor
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiJavaFile
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.Visibilities
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.*
@@ -34,16 +28,16 @@ import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.getKSTypeCached
 import com.google.devtools.ksp.symbol.impl.replaceTypeArguments
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
-import com.google.devtools.ksp.symbol.impl.toKSFunctionDeclaration
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiEnumConstant
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import com.intellij.psi.PsiJavaFile
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.load.java.structure.impl.JavaClassImpl
-import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
-import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 
-class KSClassDeclarationJavaImpl private constructor(val psi: PsiClass) : KSClassDeclaration, KSDeclarationJavaImpl(),
+class KSClassDeclarationJavaImpl private constructor(val psi: PsiClass) :
+    KSClassDeclaration,
+    KSDeclarationJavaImpl(),
     KSExpectActual by KSExpectActualNoImpl() {
     companion object : KSObjectCache<PsiClass, KSClassDeclarationJavaImpl>() {
         fun getCached(psi: PsiClass) = cache.getOrPut(psi) { KSClassDeclarationJavaImpl(psi) }
@@ -83,21 +77,24 @@ class KSClassDeclarationJavaImpl private constructor(val psi: PsiClass) : KSClas
     override fun getSealedSubclasses(): Sequence<KSClassDeclaration> = emptySequence()
 
     override fun getAllFunctions(): List<KSFunctionDeclaration> =
-            descriptor?.getAllFunctions() ?: emptyList()
+        descriptor?.getAllFunctions() ?: emptyList()
 
     override fun getAllProperties(): List<KSPropertyDeclaration> =
-            descriptor?.getAllProperties() ?: emptyList()
+        descriptor?.getAllProperties() ?: emptyList()
 
     override val declarations: List<KSDeclaration> by lazy {
-        val allDeclarations = (psi.fields.map {
-            when (it) {
-                is PsiEnumConstant -> KSClassDeclarationJavaEnumEntryImpl.getCached(it)
-                else -> KSPropertyDeclarationJavaImpl.getCached(it)
-            } } +
+        val allDeclarations = (
+            psi.fields.map {
+                when (it) {
+                    is PsiEnumConstant -> KSClassDeclarationJavaEnumEntryImpl.getCached(it)
+                    else -> KSPropertyDeclarationJavaImpl.getCached(it)
+                }
+            } +
                 psi.innerClasses.map { KSClassDeclarationJavaImpl.getCached(it) } +
                 psi.constructors.map { KSFunctionDeclarationJavaImpl.getCached(it) } +
-                psi.methods.map { KSFunctionDeclarationJavaImpl.getCached(it) })
-                .distinct()
+                psi.methods.map { KSFunctionDeclarationJavaImpl.getCached(it) }
+            )
+            .distinct()
         // java annotation classes are interface. they get a constructor in .class
         // hence they should get one here.
         if (classKind == ClassKind.ANNOTATION_CLASS || !psi.isInterface) {

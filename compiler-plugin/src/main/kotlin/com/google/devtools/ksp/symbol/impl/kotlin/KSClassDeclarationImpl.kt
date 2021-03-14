@@ -15,13 +15,9 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.isConstructor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.Visibilities
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.*
@@ -29,17 +25,14 @@ import com.google.devtools.ksp.symbol.impl.binary.getAllFunctions
 import com.google.devtools.ksp.symbol.impl.binary.getAllProperties
 import com.google.devtools.ksp.symbol.impl.binary.sealedSubclassesSequence
 import com.google.devtools.ksp.symbol.impl.synthetic.KSConstructorSyntheticImpl
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
-import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
-import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 
-class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrObject) : KSClassDeclaration,
+class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrObject) :
+    KSClassDeclaration,
     KSDeclarationImpl(ktClassOrObject),
     KSExpectActual by KSExpectActualImpl(ktClassOrObject) {
     companion object : KSObjectCache<KtClassOrObject, KSClassDeclarationImpl>() {
@@ -96,8 +89,9 @@ class KSClassDeclarationImpl private constructor(val ktClassOrObject: KtClassOrO
 
     override val primaryConstructor: KSFunctionDeclaration? by lazy {
         ktClassOrObject.primaryConstructor?.let { KSFunctionDeclarationImpl.getCached(it) }
-            ?: if ((classKind == ClassKind.CLASS || classKind == ClassKind.ENUM_CLASS)
-                    && ktClassOrObject.declarations.none { it is KtSecondaryConstructor })
+            ?: if ((classKind == ClassKind.CLASS || classKind == ClassKind.ENUM_CLASS) &&
+                ktClassOrObject.declarations.none { it is KtSecondaryConstructor }
+            )
                 KSConstructorSyntheticImpl.getCached(this) else null
     }
 

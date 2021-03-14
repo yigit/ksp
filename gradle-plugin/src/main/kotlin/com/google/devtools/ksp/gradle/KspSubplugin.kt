@@ -48,7 +48,7 @@ import kotlin.collections.LinkedHashSet
 import kotlin.reflect.KProperty1
 
 class KspGradleSubplugin @Inject internal constructor(private val registry: ToolingModelBuilderRegistry) :
-        KotlinCompilerPluginSupportPlugin {
+    KotlinCompilerPluginSupportPlugin {
     companion object {
         const val KSP_MAIN_CONFIGURATION_NAME = "ksp"
         const val KSP_ARTIFACT_NAME = "symbol-processing"
@@ -56,27 +56,27 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
 
         @JvmStatic
         fun getKspOutputDir(project: Project, sourceSetName: String) =
-                File(project.project.buildDir, "generated/ksp/$sourceSetName")
+            File(project.project.buildDir, "generated/ksp/$sourceSetName")
 
         @JvmStatic
         fun getKspClassOutputDir(project: Project, sourceSetName: String) =
-                File(getKspOutputDir(project, sourceSetName), "classes")
+            File(getKspOutputDir(project, sourceSetName), "classes")
 
         @JvmStatic
         fun getKspJavaOutputDir(project: Project, sourceSetName: String) =
-                File(getKspOutputDir(project, sourceSetName), "java")
+            File(getKspOutputDir(project, sourceSetName), "java")
 
         @JvmStatic
         fun getKspKotlinOutputDir(project: Project, sourceSetName: String) =
-                File(getKspOutputDir(project, sourceSetName), "kotlin")
+            File(getKspOutputDir(project, sourceSetName), "kotlin")
 
         @JvmStatic
         fun getKspResourceOutputDir(project: Project, sourceSetName: String) =
-                File(getKspOutputDir(project, sourceSetName), "resources")
+            File(getKspOutputDir(project, sourceSetName), "resources")
 
         @JvmStatic
         fun getKspCachesDir(project: Project, sourceSetName: String) =
-                File(project.project.buildDir, "kspCaches/$sourceSetName")
+            File(project.project.buildDir, "kspCaches/$sourceSetName")
     }
 
     private val androidIntegration by lazy {
@@ -110,7 +110,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
         registry.register(KspModelBuilder())
     }
 
-    private fun decorateKotlinExtension(project:Project) {
+    private fun decorateKotlinExtension(project: Project) {
         project.extensions.configure(KotlinSingleTargetExtension::class.java) { kotlinExtension ->
             kotlinExtension.target.compilations.createKspConfigurations(project) { kotlinCompilation ->
                 kotlinCompilation.kotlinSourceSets.map {
@@ -123,9 +123,9 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
     /**
      * Creates a KSP configuration for each element in the object container.
      */
-    internal fun<T> NamedDomainObjectContainer<T>.createKspConfigurations(
+    internal fun <T> NamedDomainObjectContainer<T>.createKspConfigurations(
         project: Project,
-        getKspConfigurationNames : (T)-> List<String>
+        getKspConfigurationNames: (T) -> List<String>
     ) {
         val mainConfiguration = project.configurations.maybeCreate(KSP_MAIN_CONFIGURATION_NAME)
         all {
@@ -156,7 +156,7 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
         val kotlinCompileProvider: TaskProvider<KotlinCompile> = project.locateTask(kotlinCompilation.compileKotlinTaskName)
-                ?: return project.provider { emptyList() }
+            ?: return project.provider { emptyList() }
         val javaCompile = findJavaTaskForKotlinCompilation(kotlinCompilation)?.get()
         val kspExtension = project.extensions.getByType(KspExtension::class.java)
         val kspConfigurations = LinkedHashSet<Configuration>()
@@ -257,25 +257,25 @@ class KspGradleSubplugin @Inject internal constructor(private val registry: Tool
 
     override fun getCompilerPluginId() = KSP_PLUGIN_ID
     override fun getPluginArtifact(): SubpluginArtifact =
-            SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = KSP_ARTIFACT_NAME, version = javaClass.`package`.implementationVersion)
+        SubpluginArtifact(groupId = "com.google.devtools.ksp", artifactId = KSP_ARTIFACT_NAME, version = javaClass.`package`.implementationVersion)
 }
 
 // Copied from kotlin-gradle-plugin, because they are internal.
 internal inline fun <reified T : Task> Project.locateTask(name: String): TaskProvider<T>? =
-        try {
-            tasks.withType(T::class.java).named(name)
-        } catch (e: UnknownTaskException) {
-            null
-        }
+    try {
+        tasks.withType(T::class.java).named(name)
+    } catch (e: UnknownTaskException) {
+        null
+    }
 
 // Copied from kotlin-gradle-plugin, because they are internal.
 internal fun findJavaTaskForKotlinCompilation(compilation: KotlinCompilation<*>): TaskProvider<out JavaCompile>? =
-        when (compilation) {
-          is KotlinJvmAndroidCompilation -> compilation.compileJavaTaskProvider
-          is KotlinWithJavaCompilation -> compilation.compileJavaTaskProvider
-          is KotlinJvmCompilation -> compilation.compileJavaTaskProvider // may be null for Kotlin-only JVM target in MPP
-            else -> null
-        }
+    when (compilation) {
+        is KotlinJvmAndroidCompilation -> compilation.compileJavaTaskProvider
+        is KotlinWithJavaCompilation -> compilation.compileJavaTaskProvider
+        is KotlinJvmCompilation -> compilation.compileJavaTaskProvider // may be null for Kotlin-only JVM target in MPP
+        else -> null
+    }
 
 open class KspTask : KspTaskJ() {
     lateinit var options: List<SubpluginOption>
@@ -296,9 +296,9 @@ open class KspTask : KspTaskJ() {
     }
 
     override fun setupCompilerArgs(
-            args: K2JVMCompilerArguments,
-            defaultsOnly: Boolean,
-            ignoreClasspathResolutionErrors: Boolean
+        args: K2JVMCompilerArguments,
+        defaultsOnly: Boolean,
+        ignoreClasspathResolutionErrors: Boolean
     ) {
         // Start with / copy from kotlinCompile.
         kotlinCompile.setupCompilerArgs(args, defaultsOnly, ignoreClasspathResolutionErrors)
@@ -316,7 +316,7 @@ open class KspTask : KspTaskJ() {
 }
 
 fun K2JVMCompilerArguments.addPluginOptions(options: List<SubpluginOption>) {
-    fun SubpluginOption.toArg() = "plugin:${KspGradleSubplugin.KSP_PLUGIN_ID}:${key}=${value}"
+    fun SubpluginOption.toArg() = "plugin:${KspGradleSubplugin.KSP_PLUGIN_ID}:$key=$value"
     pluginOptions = (options.map { it.toArg() } + pluginOptions!!).toTypedArray()
 }
 

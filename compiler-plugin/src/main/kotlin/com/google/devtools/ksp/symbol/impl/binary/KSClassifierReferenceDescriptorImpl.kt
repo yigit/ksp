@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
-import org.jetbrains.kotlin.descriptors.ClassifierDescriptorWithTypeParameters
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
+import org.jetbrains.kotlin.descriptors.ClassifierDescriptorWithTypeParameters
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeProjection
 
-class KSClassifierReferenceDescriptorImpl private constructor(val descriptor: ClassifierDescriptor, val arguments: List<TypeProjection>) :
+class KSClassifierReferenceDescriptorImpl private constructor(
+    val descriptor: ClassifierDescriptor,
+    val arguments: List<TypeProjection>
+) :
     KSClassifierReference {
     companion object : KSObjectCache<Pair<ClassifierDescriptor, List<TypeProjection>>, KSClassifierReferenceDescriptorImpl>() {
         fun getCached(kotlinType: KotlinType) = cache.getOrPut(

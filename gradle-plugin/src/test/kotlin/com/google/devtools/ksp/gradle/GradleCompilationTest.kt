@@ -17,8 +17,8 @@
 package com.google.devtools.ksp.gradle
 
 import com.google.common.truth.Truth.assertThat
-import com.google.devtools.ksp.gradle.testing.DependencyDeclaration.Companion.module
 import com.google.devtools.ksp.gradle.processor.TestSymbolProcessor
+import com.google.devtools.ksp.gradle.testing.DependencyDeclaration.Companion.module
 import com.google.devtools.ksp.gradle.testing.KspIntegrationTestRule
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -87,7 +87,7 @@ class GradleCompilationTest {
         class MyProcessor : TestSymbolProcessor() {
             var count = 0
             override fun process(resolver: Resolver): List<KSAnnotated> {
-                if(count == 0) {
+                if (count == 0) {
                     codeGenerator.createNewFile(Dependencies.ALL_FILES, "", "Generated").use {
                         it.writer(Charsets.UTF_8).use {
                             it.write("class ToBeGenerated")

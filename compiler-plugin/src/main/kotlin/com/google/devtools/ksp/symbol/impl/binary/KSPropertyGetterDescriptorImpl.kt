@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.PropertyGetterDescriptor
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.KSObjectCache
+import org.jetbrains.kotlin.descriptors.PropertyGetterDescriptor
 
 class KSPropertyGetterDescriptorImpl private constructor(descriptor: PropertyGetterDescriptor) :
     KSPropertyAccessorDescriptorImpl(descriptor), KSPropertyGetter {

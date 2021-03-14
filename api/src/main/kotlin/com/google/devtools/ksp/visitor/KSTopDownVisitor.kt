@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.visitor
 
 import com.google.devtools.ksp.symbol.*

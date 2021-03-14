@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.java
 
 import com.google.devtools.ksp.getClassDeclarationByName
@@ -84,13 +83,13 @@ class KSAnnotationJavaImpl private constructor(val psi: PsiAnnotation) : KSAnnot
         if (value is PsiAnnotation) {
             return getCached(value)
         }
-        val result = when(value) {
+        val result = when (value) {
             is PsiReference -> value.resolve()?.let { resolved ->
                 JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(value) ?: resolved
             }
             else -> value?.let { JavaPsiFacade.getInstance(value.project).constantEvaluationHelper.computeConstantExpression(value) }
         }
-        return when(result) {
+        return when (result) {
             is PsiType -> {
                 ResolverImpl.instance.getClassDeclarationByName(result.canonicalText)?.asStarProjectedType() ?: KSErrorType
             }

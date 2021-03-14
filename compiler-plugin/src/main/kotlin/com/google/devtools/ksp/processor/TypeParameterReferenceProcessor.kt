@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
-open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
+open class TypeParameterReferenceProcessor : AbstractTestProcessor() {
     val results = mutableListOf<String>()
     val collector = ReferenceCollector()
     val references = mutableSetOf<KSTypeReference>()
@@ -45,5 +44,4 @@ open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
     override fun toResult(): List<String> {
         return results
     }
-
 }

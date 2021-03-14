@@ -10,4 +10,3 @@ subprojects {
         google()
     }
 }
-

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.binary
 
 import com.google.devtools.ksp.ExceptionMessage
@@ -25,7 +24,6 @@ import com.google.devtools.ksp.symbol.impl.KSObjectCache
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.KSFunctionDeclarationJavaImpl
 import com.google.devtools.ksp.symbol.impl.java.KSPropertyDeclarationJavaImpl
-import com.google.devtools.ksp.symbol.impl.kotlin.KSClassDeclarationImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSFunctionDeclarationImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSPropertyDeclarationParameterImpl
@@ -43,7 +41,8 @@ import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 import org.jetbrains.kotlin.descriptors.ClassKind as KtClassKind
 
-class KSClassDeclarationDescriptorImpl private constructor(val descriptor: ClassDescriptor) : KSClassDeclaration,
+class KSClassDeclarationDescriptorImpl private constructor(val descriptor: ClassDescriptor) :
+    KSClassDeclaration,
     KSDeclarationDescriptorImpl(descriptor),
     KSExpectActual by KSExpectActualDescriptorImpl(descriptor) {
     companion object : KSObjectCache<ClassDescriptor, KSClassDeclarationDescriptorImpl>() {
@@ -100,10 +99,10 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
             descriptor.constructors
         ).flatten()
             .filter {
-                it is MemberDescriptor
-                        && it.visibility != DescriptorVisibilities.INHERITED
-                        && it.visibility != DescriptorVisibilities.INVISIBLE_FAKE
-                        && (it !is CallableMemberDescriptor || it.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
+                it is MemberDescriptor &&
+                    it.visibility != DescriptorVisibilities.INHERITED &&
+                    it.visibility != DescriptorVisibilities.INVISIBLE_FAKE &&
+                    (it !is CallableMemberDescriptor || it.kind != CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
             }
             .map {
                 when (it) {
@@ -148,7 +147,7 @@ class KSClassDeclarationDescriptorImpl private constructor(val descriptor: Class
 internal fun ClassDescriptor.getAllFunctions(): List<KSFunctionDeclaration> {
     ResolverImpl.instance.incrementalContext.recordLookupForGetAllFunctions(this)
     val functionDescriptors = unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS).toList()
-            .filter { (it as FunctionDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }.toMutableList()
+        .filter { (it as FunctionDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }.toMutableList()
     functionDescriptors += constructors
     return functionDescriptors.map {
         when (val psi = it.findPsi()) {
@@ -162,15 +161,15 @@ internal fun ClassDescriptor.getAllFunctions(): List<KSFunctionDeclaration> {
 internal fun ClassDescriptor.getAllProperties(): List<KSPropertyDeclaration> {
     ResolverImpl.instance.incrementalContext.recordLookupForGetAllProperties(this)
     return unsubstitutedMemberScope.getDescriptorsFiltered(DescriptorKindFilter.VARIABLES).toList()
-            .filter { (it as PropertyDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }
-            .map {
-                when (val psi = it.findPsi()) {
-                    is KtParameter -> KSPropertyDeclarationParameterImpl.getCached(psi)
-                    is KtProperty -> KSPropertyDeclarationImpl.getCached(psi)
-                    is PsiField -> KSPropertyDeclarationJavaImpl.getCached(psi)
-                    else -> KSPropertyDeclarationDescriptorImpl.getCached(it as PropertyDescriptor)
-                }
+        .filter { (it as PropertyDescriptor).visibility != DescriptorVisibilities.INVISIBLE_FAKE }
+        .map {
+            when (val psi = it.findPsi()) {
+                is KtParameter -> KSPropertyDeclarationParameterImpl.getCached(psi)
+                is KtProperty -> KSPropertyDeclarationImpl.getCached(psi)
+                is PsiField -> KSPropertyDeclarationJavaImpl.getCached(psi)
+                else -> KSPropertyDeclarationDescriptorImpl.getCached(it as PropertyDescriptor)
             }
+        }
 }
 
 internal fun ClassDescriptor.sealedSubclassesSequence(): Sequence<KSClassDeclaration> {

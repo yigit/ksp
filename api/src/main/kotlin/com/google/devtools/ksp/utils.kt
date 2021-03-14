@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp
 
 import com.google.devtools.ksp.processing.Resolver
@@ -81,7 +80,7 @@ fun KSDeclaration.isLocal(): Boolean {
  * Perform a validation on a given symbol to check if all interested types in symbols enclosed scope are valid, i.e. resolvable.
  * @param predicate: A lambda for filtering interested symbols for performance purpose. Default checks all.
  */
-fun KSNode.validate(predicate: (KSNode?, KSNode) -> Boolean = { _, _-> true } ): Boolean {
+fun KSNode.validate(predicate: (KSNode?, KSNode) -> Boolean = { _, _ -> true }): Boolean {
     return this.accept(KSValidateVisitor(predicate), null)
 }
 
@@ -155,7 +154,7 @@ fun KSClassDeclaration.getAllSuperTypes(): Sequence<KSType> {
 
 fun KSClassDeclaration.isAbstract() = this.classKind == ClassKind.INTERFACE || this.modifiers.contains(Modifier.ABSTRACT)
 
-fun KSPropertyDeclaration.isAbstract() : Boolean {
+fun KSPropertyDeclaration.isAbstract(): Boolean {
     if (modifiers.contains(Modifier.ABSTRACT)) {
         return true
     }
@@ -166,13 +165,14 @@ fun KSPropertyDeclaration.isAbstract() : Boolean {
         (setter?.modifiers?.contains(Modifier.ABSTRACT) ?: true)
 }
 
-fun KSDeclaration.isOpen() = !this.isLocal()
-        && ((this as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-        || this.modifiers.contains(Modifier.OVERRIDE)
-        || this.modifiers.contains(Modifier.ABSTRACT)
-        || this.modifiers.contains(Modifier.OPEN)
-        || (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-        || (!this.modifiers.contains(Modifier.FINAL) && this.origin == Origin.JAVA)
+fun KSDeclaration.isOpen() = !this.isLocal() &&
+    (
+        (this as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE ||
+            this.modifiers.contains(Modifier.OVERRIDE) ||
+            this.modifiers.contains(Modifier.ABSTRACT) ||
+            this.modifiers.contains(Modifier.OPEN) ||
+            (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE ||
+            (!this.modifiers.contains(Modifier.FINAL) && this.origin == Origin.JAVA)
         )
 
 fun KSDeclaration.isPublic() = this.getVisibility() == Visibility.PUBLIC
@@ -192,7 +192,6 @@ fun KSDeclaration.closestClassDeclaration(): KSClassDeclaration? {
         return this.parentDeclaration?.closestClassDeclaration()
     }
 }
-
 
 // TODO: cross module visibility is not handled
 fun KSDeclaration.isVisibleFrom(other: KSDeclaration): Boolean {
@@ -215,13 +214,13 @@ fun KSDeclaration.isVisibleFrom(other: KSDeclaration): Boolean {
     }
 
     fun KSDeclaration.isVisibleInPrivate(other: KSDeclaration) =
-        (other.isLocal() && other.parentDeclarationsForLocal().contains(this.parentDeclaration))
-                || this.parentDeclaration == other.parentDeclaration
-                || this.parentDeclaration == other
-                || (
-                this.parentDeclaration == null
-                        && other.parentDeclaration == null
-                        && this.containingFile == other.containingFile
+        (other.isLocal() && other.parentDeclarationsForLocal().contains(this.parentDeclaration)) ||
+            this.parentDeclaration == other.parentDeclaration ||
+            this.parentDeclaration == other ||
+            (
+                this.parentDeclaration == null &&
+                    other.parentDeclaration == null &&
+                    this.containingFile == other.containingFile
                 )
 
     return when {

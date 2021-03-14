@@ -66,7 +66,7 @@ class TestProject(
                         google()
                     }
                 }
-            """.trimIndent()
+        """.trimIndent()
         rootDir.resolve("settings.gradle.kts").writeText(contents)
     }
 
@@ -106,7 +106,7 @@ class TestProject(
                     }
                 }
             }
-            """.trimIndent()
+                """.trimIndent()
             )
         }
         rootDir.resolve("build.gradle.kts").writeText(rootBuildFile)

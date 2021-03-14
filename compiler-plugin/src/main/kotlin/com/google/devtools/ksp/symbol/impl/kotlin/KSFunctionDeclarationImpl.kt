@@ -15,24 +15,21 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.kotlin
 
 import com.google.devtools.ksp.ExceptionMessage
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import com.google.devtools.ksp.isOpen
-import com.google.devtools.ksp.isVisibleFrom
 import com.google.devtools.ksp.processing.impl.ResolverImpl
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.*
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
+import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
-import org.jetbrains.kotlin.resolve.OverridingUtil
 import org.jetbrains.kotlin.resolve.calls.inference.returnTypeOrNothing
 import java.lang.IllegalStateException
 
-class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) : KSFunctionDeclaration, KSDeclarationImpl(ktFunction),
+class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) :
+    KSFunctionDeclaration,
+    KSDeclarationImpl(ktFunction),
     KSExpectActual by KSExpectActualImpl(ktFunction) {
     companion object : KSObjectCache<KtFunction, KSFunctionDeclarationImpl>() {
         fun getCached(ktFunction: KtFunction) = cache.getOrPut(ktFunction) { KSFunctionDeclarationImpl(ktFunction) }
@@ -81,8 +78,10 @@ class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) 
 
     override val isAbstract: Boolean by lazy {
         this.modifiers.contains(Modifier.ABSTRACT) ||
-                ((this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE
-                        && !this.ktFunction.hasBody())
+            (
+                (this.parentDeclaration as? KSClassDeclaration)?.classKind == ClassKind.INTERFACE &&
+                    !this.ktFunction.hasBody()
+                )
     }
 
     override val parameters: List<KSValueParameter> by lazy {
@@ -104,4 +103,3 @@ class KSFunctionDeclarationImpl private constructor(val ktFunction: KtFunction) 
         return visitor.visitFunctionDeclaration(this, data)
     }
 }
-

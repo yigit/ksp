@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processing.impl
 
 import com.google.devtools.ksp.*
@@ -25,7 +24,6 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.symbol.impl.binary.*
-import com.google.devtools.ksp.symbol.impl.findClosestOverridee
 import com.google.devtools.ksp.symbol.impl.findPsi
 import com.google.devtools.ksp.symbol.impl.java.*
 import com.google.devtools.ksp.symbol.impl.kotlin.*
@@ -80,7 +78,6 @@ import org.jetbrains.kotlin.types.typeUtil.replaceArgumentsWithStarProjections
 import org.jetbrains.kotlin.types.typeUtil.substitute
 import org.jetbrains.kotlin.types.typeUtil.supertypes
 import org.jetbrains.kotlin.util.containingNonLocalDeclaration
-import java.io.File
 
 class ResolverImpl(
     val module: ModuleDescriptor,
@@ -104,7 +101,7 @@ class ResolverImpl(
     private val typeMapper = KotlinTypeMapper(
         BindingContext.EMPTY, ClassBuilderMode.LIGHT_CLASSES,
         module.name.getNonSpecialIdentifier(),
-        KotlinTypeMapper.LANGUAGE_VERSION_SETTINGS_DEFAULT,// TODO use proper LanguageVersionSettings
+        KotlinTypeMapper.LANGUAGE_VERSION_SETTINGS_DEFAULT, // TODO use proper LanguageVersionSettings
         true
     )
 
@@ -184,12 +181,14 @@ class ResolverImpl(
         fun checkAnnotation(annotated: KSAnnotated): Boolean {
             val ksName = KSNameImpl.getCached(annotationName)
 
-            return (annotated.annotations.any {
-                        val annotationType = it.annotationType
-                        (annotationType.element as? KSClassifierReference)?.referencedName()
-                                .let { it == null || it == ksName.getShortName() }
-                                && annotationType.resolve().declaration.qualifiedName == ksName
-                    })
+            return (
+                annotated.annotations.any {
+                    val annotationType = it.annotationType
+                    (annotationType.element as? KSClassifierReference)?.referencedName()
+                        .let { it == null || it == ksName.getShortName() } &&
+                        annotationType.resolve().declaration.qualifiedName == ksName
+                }
+                )
         }
 
         val visitor = object : KSVisitorVoid() {
@@ -245,7 +244,7 @@ class ResolverImpl(
         for (file in newKSFiles) {
             file.accept(visitor, Unit)
         }
-        return visitor.symbols.toList() + deferredSymbols.values.flatten().filter{ checkAnnotation(it)  }
+        return visitor.symbols.toList() + deferredSymbols.values.flatten().filter { checkAnnotation(it) }
     }
 
     override fun getKSNameFromString(name: String): KSName {
@@ -270,7 +269,7 @@ class ResolverImpl(
 
     override fun overrides(overrider: KSDeclaration, overridee: KSDeclaration): Boolean {
         fun resolveForOverride(declaration: KSDeclaration): DeclarationDescriptor? {
-            return when(declaration) {
+            return when (declaration) {
                 is KSPropertyDeclaration -> resolvePropertyDeclaration(declaration)
                 is KSFunctionDeclarationJavaImpl -> resolveJavaDeclaration(declaration.psi)
                 is KSFunctionDeclaration -> resolveFunctionDeclaration(declaration)
@@ -477,10 +476,10 @@ class ResolverImpl(
                             "unexpected owner type: $owner / ${owner?.javaClass}"
                         }
                         moduleClassResolver.resolveContainingClass(owner)
-                        ?.findEnclosedDescriptor(
-                            kindFilter = DescriptorKindFilter.FUNCTIONS,
-                            filter = { it.findPsi() == owner }
-                        ) as FunctionDescriptor
+                            ?.findEnclosedDescriptor(
+                                kindFilter = DescriptorKindFilter.FUNCTIONS,
+                                filter = { it.findPsi() == owner }
+                            ) as FunctionDescriptor
                     } as DeclarationDescriptor
                     return getKSTypeCached(
                         LazyJavaTypeParameterDescriptor(
@@ -490,7 +489,6 @@ class ResolverImpl(
                             containingDeclaration
                         ).defaultType
                     )
-
                 } else {
                     return getKSTypeCached(resolveJavaType(type.psi), type.element.typeArguments, type.annotations)
                 }
@@ -558,7 +556,7 @@ class ResolverImpl(
     }
 
     @KspExperimental
-    override fun getJvmName(accessor: KSPropertyAccessor) :String? {
+    override fun getJvmName(accessor: KSPropertyAccessor): String? {
         val descriptor = resolvePropertyAccessorDeclaration(accessor)
 
         return descriptor?.let {
@@ -568,7 +566,7 @@ class ResolverImpl(
     }
 
     @KspExperimental
-    override fun getJvmName(declaration: KSFunctionDeclaration) :String? {
+    override fun getJvmName(declaration: KSFunctionDeclaration): String? {
         // function names might be mangled if they receive inline class parameters or they are internal
         val descriptor = resolveFunctionDeclaration(declaration)
         return descriptor?.let {
@@ -586,8 +584,10 @@ class ResolverImpl(
         containing: KSType
     ): KSType {
         val propertyDeclaredIn = property.closestClassDeclaration()
-            ?: throw IllegalArgumentException("Cannot call asMemberOf with a property that is " +
-                "not declared in a class or an interface")
+            ?: throw IllegalArgumentException(
+                "Cannot call asMemberOf with a property that is " +
+                    "not declared in a class or an interface"
+            )
         val declaration = resolvePropertyDeclaration(property)
         if (declaration != null && containing is KSTypeImpl && !containing.isError) {
             incrementalContext.recordLookupWithSupertypes(containing.kotlinType)
@@ -620,10 +620,12 @@ class ResolverImpl(
     private fun computeAsMemberOf(
         function: KSFunctionDeclaration,
         containing: KSType
-    ) : KSFunction {
+    ): KSFunction {
         val functionDeclaredIn = function.closestClassDeclaration()
-            ?: throw IllegalArgumentException("Cannot call asMemberOf with a function that is " +
-                "not declared in a class or an interface")
+            ?: throw IllegalArgumentException(
+                "Cannot call asMemberOf with a function that is " +
+                    "not declared in a class or an interface"
+            )
         val declaration = resolveFunctionDeclaration(function)
         if (declaration != null && containing is KSTypeImpl && !containing.isError) {
             incrementalContext.recordLookupWithSupertypes(containing.kotlinType)
@@ -682,7 +684,6 @@ class ResolverImpl(
     }
 
     internal val javaSerializableType = module.resolveClassByFqName(FqName("java.io.Serializable"), NoLookupLocation.WHEN_FIND_BY_FQNAME)!!.defaultType
-
 }
 
 open class BaseVisitor : KSVisitorVoid() {
@@ -752,7 +753,7 @@ private fun KotlinType.createTypeSubstitutor(): NewTypeSubstitutor {
  *
  * @see: https://github.com/JetBrains/kotlin/blob/master/compiler/cli/src/org/jetbrains/kotlin/cli/jvm/compiler/TopDownAnalyzerFacadeForJVM.kt#L305
  */
-private fun Name.getNonSpecialIdentifier() :String {
+private fun Name.getNonSpecialIdentifier(): String {
     // the analyzer might pass down a special name which will break type mapper name computations.
     // If it is a special name, we turn it back to an id
     if (!isSpecial || asString().isBlank()) {
@@ -769,7 +770,7 @@ private fun Name.getNonSpecialIdentifier() :String {
 private inline fun MemberScope.findEnclosedDescriptor(
     kindFilter: DescriptorKindFilter,
     crossinline filter: (DeclarationDescriptor) -> Boolean
-) : DeclarationDescriptor? {
+): DeclarationDescriptor? {
     return getContributedDescriptors(
         kindFilter = kindFilter
     ).firstOrNull(filter)
@@ -778,7 +779,7 @@ private inline fun MemberScope.findEnclosedDescriptor(
 private inline fun ClassDescriptor.findEnclosedDescriptor(
     kindFilter: DescriptorKindFilter,
     crossinline filter: (DeclarationDescriptor) -> Boolean
-) : DeclarationDescriptor? {
+): DeclarationDescriptor? {
     return this.unsubstitutedMemberScope.findEnclosedDescriptor(
         kindFilter = kindFilter,
         filter = filter

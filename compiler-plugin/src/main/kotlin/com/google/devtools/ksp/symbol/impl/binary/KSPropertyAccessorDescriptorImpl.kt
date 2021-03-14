@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.binary
 
-import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.toFunctionKSModifiers
 import com.google.devtools.ksp.symbol.impl.toKSModifiers
 import com.google.devtools.ksp.symbol.impl.toKSPropertyDeclaration
+import org.jetbrains.kotlin.descriptors.PropertyAccessorDescriptor
 
 abstract class KSPropertyAccessorDescriptorImpl(val descriptor: PropertyAccessorDescriptor) : KSPropertyAccessor {
     override val origin: Origin
-        get() = when(receiver.origin) {
+        get() = when (receiver.origin) {
             // if receiver is kotlin source, that means we are a synthetic where developer
             // didn't declare an explicit accessor so we used the descriptor instead
             Origin.KOTLIN -> Origin.SYNTHETIC

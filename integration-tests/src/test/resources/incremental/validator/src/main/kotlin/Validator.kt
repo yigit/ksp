@@ -6,23 +6,25 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.google.devtools.ksp.visitor.KSDefaultVisitor
-import java.io.File
-import java.io.OutputStream
 import java.io.OutputStreamWriter
-
 
 class Validator : SymbolProcessor {
     lateinit var codeGenerator: CodeGenerator
     lateinit var logger: KSPLogger
     var processed = false
 
-    override fun init(options: Map<String, String>, kotlinVersion: KotlinVersion, codeGenerator: CodeGenerator, logger: KSPLogger) {
+    override fun init(
+        options: Map<String, String>,
+        kotlinVersion: KotlinVersion,
+        codeGenerator: CodeGenerator,
+        logger: KSPLogger
+    ) {
         this.codeGenerator = codeGenerator
         this.logger = logger
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if(processed) {
+        if (processed) {
             return emptyList()
         }
         val validator = object : KSDefaultVisitor<OutputStreamWriter, Unit>() {
@@ -47,5 +49,3 @@ class Validator : SymbolProcessor {
         return emptyList()
     }
 }
-
-

@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.symbol.impl.java
 
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiJavaFile
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.impl.*
 import com.google.devtools.ksp.symbol.impl.kotlin.KSExpectActualNoImpl
 import com.google.devtools.ksp.symbol.impl.kotlin.KSNameImpl
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiJavaFile
 
-class KSPropertyDeclarationJavaImpl private constructor(val psi: PsiField) : KSPropertyDeclaration, KSDeclarationJavaImpl(),
+class KSPropertyDeclarationJavaImpl private constructor(val psi: PsiField) :
+    KSPropertyDeclaration,
+    KSDeclarationJavaImpl(),
     KSExpectActual by KSExpectActualNoImpl() {
     companion object : KSObjectCache<PsiField, KSPropertyDeclarationJavaImpl>() {
         fun getCached(psi: PsiField) = cache.getOrPut(psi) { KSPropertyDeclarationJavaImpl(psi) }
@@ -86,5 +87,4 @@ class KSPropertyDeclarationJavaImpl private constructor(val psi: PsiField) : KSP
     override fun <D, R> accept(visitor: KSVisitor<D, R>, data: D): R {
         return visitor.visitPropertyDeclaration(this, data)
     }
-
 }

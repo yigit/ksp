@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 
-
 package com.google.devtools.ksp.processor
 
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.visitor.KSTopDownVisitor
 
@@ -44,7 +42,7 @@ class DeclarationCollector : KSTopDownVisitor<MutableCollection<String>, Unit>()
     override fun defaultHandler(node: KSNode, data: MutableCollection<String>) {
     }
 
-    private fun KSDeclaration.toSignature() : String {
+    private fun KSDeclaration.toSignature(): String {
         qualifiedName?.let {
             return it.asString()
         }
