@@ -45,30 +45,37 @@ class AnnotationsInDependenciesProcessor : AbstractTestProcessor() {
         return output
     }
 
-    private fun KSAnnotated.toSignature(): String {
+    private fun Any?.toSignature(): String {
         return when(this) {
-            is KSClassDeclaration -> "class " + (qualifiedName ?: simpleName).asString()
-            is KSPropertyDeclaration -> "property ${simpleName.asString()}"
-            is KSFunctionDeclaration -> "function ${simpleName.asString()}"
-            is KSValueParameter -> name?.let {
-                "parameter ${it.asString()}"
-            } ?: "no-name-value-parameter"
-            is KSPropertyGetter -> "getter of ${receiver.toSignature()}"
-            is KSPropertySetter -> "setter of ${receiver.toSignature()}"
-            else -> {
-                error("unexpected annotated")
+            is KSAnnotated -> when(this) {
+                is KSClassDeclaration -> "class " + (qualifiedName ?: simpleName).asString()
+                is KSPropertyDeclaration -> "property ${simpleName.asString()}"
+                is KSFunctionDeclaration -> "function ${simpleName.asString()}"
+                is KSValueParameter -> name?.let {
+                    "parameter ${it.asString()}"
+                } ?: "no-name-value-parameter"
+                is KSPropertyGetter -> "getter of ${receiver.toSignature()}"
+                is KSPropertySetter -> "setter of ${receiver.toSignature()}"
+                else -> {
+                    error("unexpected annotated")
+                }
             }
+            is KSAnnotation -> {
+                val type = this.annotationType.resolve().declaration.let {
+                    (it.qualifiedName ?: it.simpleName).asString()
+                }
+                val args = this.arguments.map {
+                    "[${it.name?.asString()} = ${it.value.toSignature()}]"
+                }.joinToString(",")
+                "$type{$args}"
+            }
+            is List<*> -> {
+                joinToString(prefix = "{", postfix = "}", separator = ",") {
+                    it.toSignature()
+                }
+            }
+            else -> toString()
         }
-    }
-
-    private fun KSAnnotation.toSignature(): String {
-        val type = this.annotationType.resolve().declaration.let {
-            (it.qualifiedName ?: it.simpleName).asString()
-        }
-        val args = this.arguments.map {
-            "[${it.name?.asString()} = ${it.value}]"
-        }.joinToString(",")
-        return "$type{$args}"
     }
 
     class AnnotationVisitor : KSTopDownVisitor<MutableMap<KSAnnotated, List<KSAnnotation>>, Unit>() {

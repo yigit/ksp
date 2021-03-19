@@ -21,6 +21,7 @@
 // main.KotlinClass ->
 // class main.KotlinClass : annotations.ClassTarget{[value = onClass]}
 // class main.KotlinClass : annotations.NoTargetAnnotation{[value = onClass]}
+// class main.KotlinClass : annotations.ParentAnnotation{[value = {annotations.ChildAnnotation{[value = x]},annotations.ChildAnnotation{[value = y]}}]}
 // function myFun : annotations.FunctionTarget{[value = onMyFun]}
 // function myFun : annotations.NoTargetAnnotation{[value = onMyFun]}
 // getter of property prop : annotations.PropertyGetterTarget{[value = get:]}
@@ -36,6 +37,7 @@
 // lib.KotlinClass ->
 // class lib.KotlinClass : annotations.ClassTarget{[value = onClass]}
 // class lib.KotlinClass : annotations.NoTargetAnnotation{[value = onClass]}
+// class lib.KotlinClass : annotations.ParentAnnotation{[value = {annotations.ChildAnnotation{[value = x]},annotations.ChildAnnotation{[value = y]}}]}
 // function myFun : annotations.FunctionTarget{[value = onMyFun]}
 // function myFun : annotations.NoTargetAnnotation{[value = onMyFun]}
 // getter of property prop : annotations.PropertyGetterTarget{[value = get:]}
@@ -101,12 +103,22 @@ annotation class FunctionTarget(val value:String)
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class ValueParameterTarget(val value:String)
+
+annotation class ParentAnnotation(
+    val value: Array<ChildAnnotation>
+)
+annotation class ChildAnnotation(
+    val value: String
+)
 // MODULE: lib(annotations)
 // FILE: ClassInLib.kt
 package lib;
 import annotations.*;
 @NoTargetAnnotation("onClass")
 @ClassTarget("onClass")
+@ParentAnnotation(
+    value = [ChildAnnotation("x"), ChildAnnotation("y")]
+)
 class KotlinClass {
     @NoTargetAnnotation("onProp")
     @FieldTarget("onProp")
@@ -150,6 +162,9 @@ package main;
 import annotations.*;
 @NoTargetAnnotation("onClass")
 @ClassTarget("onClass")
+@ParentAnnotation(
+    value = [ChildAnnotation("x"), ChildAnnotation("y")]
+)
 class KotlinClass {
     @NoTargetAnnotation("onProp")
     @FieldTarget("onProp")
