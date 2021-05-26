@@ -24,27 +24,84 @@ import com.google.devtools.ksp.symbol.*
 
 open class TypeParameterReferenceProcessor: AbstractTestProcessor() {
     val results = mutableListOf<String>()
-    val collector = ReferenceCollector()
-    val references = mutableSetOf<KSTypeReference>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val files = resolver.getNewFiles()
-
-        files.forEach {
-            it.accept(collector, references)
+        listOf(
+            "lib.SelfReferencing",
+            "lib.SelfReferencingJava",
+            "SelfReferencing",
+            "SelfReferencingJava"
+        ).forEach { className ->
+            val selfReferencing = resolver.getClassDeclarationByName(className) ?: error("where is $className")
+            results.add("$className:")
+            results.add(selfReferencing.asStarProjectedType().dumpToString(10))
         }
 
-        val sortedReferences = references.filter { it.element is KSClassifierReference && it.origin == Origin.KOTLIN }.sortedBy { (it.element as KSClassifierReference).referencedName() }
-
-        for (i in sortedReferences) {
-            val r = i.resolve()
-            results.add("${r.declaration.qualifiedName?.asString()}: ${r.isMarkedNullable}")
-        }
-        val libFoo = resolver.getClassDeclarationByName("LibFoo")!!
-        libFoo.declarations.filterIsInstance<KSPropertyDeclaration>().forEach { results.add(it.type.toString()) }
-        val javaLib = resolver.getClassDeclarationByName("JavaLib")!!
-        javaLib.declarations.filterIsInstance<KSFunctionDeclaration>().forEach { results.add(it.returnType.toString()) }
         return emptyList()
+    }
+
+    private fun KSType.dumpToString(depth: Int): String {
+        return dump(depth).toString()
+    }
+
+    private fun KSType.dump(depth: Int): TypeNameNode? {
+        if (depth < 0) return null
+        if (isError) {
+            TypeNameNode(
+                text = "error"
+            )
+        }
+        return TypeNameNode(
+            text = toString(),
+            typeArgs = this.arguments.mapIndexed { index, typeArg ->
+                typeArg.dump(declaration.typeParameters[index], depth - 1)
+            }.filterNotNull()
+        )
+    }
+
+    private fun KSTypeArgument.dump(
+        param: KSTypeParameter,
+        depth: Int
+    ) : TypeNameNode? {
+        if (depth < 0) return null
+        return if (variance == Variance.STAR) {
+            param.dump(depth)
+        } else {
+            type!!.resolve().dump(depth)
+        }
+    }
+    private fun KSTypeReference.dump(
+        depth: Int
+    ) : TypeNameNode? {
+        return resolve().dump(depth)
+    }
+
+    private fun KSTypeParameter.dump(depth: Int): TypeNameNode? {
+        if (depth < 0) return null
+        return TypeNameNode(
+            text = this.name.asString(),
+            bounds = this.bounds.map {
+                it.dump(depth - 1)
+            }.filterNotNull().toList()
+        )
+    }
+
+    private data class TypeNameNode(
+        val text: String,
+        val bounds: List<TypeNameNode> = emptyList(),
+        val typeArgs: List<TypeNameNode> = emptyList()
+    ) {
+        override fun toString(): String {
+            return buildString {
+                appendLine(text)
+                bounds.forEach {
+                    appendLine(it.toString().prependIndent("> "))
+                }
+                typeArgs.forEach {
+                    appendLine(it.toString().prependIndent("| "))
+                }
+            }.trim()
+        }
     }
 
     override fun toResult(): List<String> {
