@@ -125,6 +125,10 @@ fun <T>fileLevelFunction():Unit = TODO()
 val fileLevelProperty:Int = 3
 val errorType: NonExistingType
 
+interface MyKotlinInterface {
+    val x:Int
+    var y:Int
+}
 // FILE: JavaInput.java
 class JavaBase<BaseTypeArg1, BaseTypeArg2> {
     int intType;
@@ -142,4 +146,15 @@ class JavaBase<BaseTypeArg1, BaseTypeArg2> {
 }
 
 class JavaChild1 extends JavaBase<String, Integer> {
+}
+
+class JavaImpl implements MyKotlinInterface { // remove implements and it will work fine
+    public int getX() {
+        return 1;
+    }
+    public int getY() {
+        return 1;
+    }
+    public void setY(int value) {
+    }
 }
