@@ -8,6 +8,7 @@
 // constructorParameterFoo
 // <init>
 // param
+// UsesAlias
 // ==== Anno in depth ====
 // Foo
 // propertyFoo
@@ -17,6 +18,7 @@
 // constructorParameterFoo
 // <init>
 // param
+// UsesAlias
 // ==== Bnno superficial====
 // File: Foo.kt
 // <init>
@@ -31,6 +33,7 @@
 //FILE: annotations.kt
 annotation class Anno
 annotation class Bnno
+typealias AnnoAlias = Anno
 
 //FILE: Foo.kt
 @file:Bnno
@@ -50,3 +53,6 @@ class Foo @Anno constructor(@Anno val constructorParameterFoo: Int, @Anno param:
         @Anno val local = 1
     }
 }
+
+@AnnoAlias
+class UsesAlias
